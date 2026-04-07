@@ -1,0 +1,14 @@
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\config\DataInitializer.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\config\SecurityConfig.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\controller\AuthController.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\dto\ChangePasswordRequest.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\dto\LoginRequest.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\dto\LoginResponse.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\dto\RegisterRequest.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\model\Usuario.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\repository\UsuarioRepository.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\security\JwtFilter.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\security\JwtService.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\security\UserDetailsServiceImpl.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\service\AuthService.java
+C:\Users\Lessa\Desktop\TCC\sgh\backend\user-service\src\main\java\com\unifor\br\user_service\UserServiceApplication.java

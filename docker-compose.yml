@@ -1,0 +1,76 @@
+services:
+  # Banco de Dados exclusivo para Usuários
+  db-users:
+    image: postgres:15
+    container_name: healthsys-db-users
+    environment:
+      - POSTGRES_DB=users_service
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345678
+    ports:
+      - "5433:5432"
+    volumes:
+      - users_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d users_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Banco de Dados exclusivo para Médicos
+  db-doctors:
+    image: postgres:15
+    container_name: healthsys-db-doctors
+    environment:
+      - POSTGRES_DB=doctors_service
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345678
+    ports:
+      - "5434:5432"
+    volumes:
+      - doctors_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d doctors_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Serviço de Autenticação e Usuários
+  user-service:
+    build: ./user-service
+    container_name: healthsys-user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://db-users:5432/users_service
+      - DB_USER=postgres
+      - DB_USERNAME=postgres  # Adicionado porque seu código pediu nos logs
+      - DB_PASSWORD=12345678
+      - JWT_SECRET=healthsys-chave-super-secreta-projeto-distribuido-2026
+      - JWT_EXPIRATION=86400000
+    depends_on:
+      db-users:
+        condition: service_healthy
+
+  # Serviço de Gestão de Médicos
+  doctor-service:
+    build: ./doctor-service
+    container_name: healthsys-doctor-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:postgresql://db-doctors:5432/doctors_service
+      - DB_USER=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=12345678
+      - JWT_SECRET=healthsys-chave-super-secreta-projeto-distribuido-2026
+      - JWT_EXPIRATION=86400000
+    # O comando abaixo força o Spring a usar a URL do Docker, ignorando o localhost
+    entrypoint: ["java", "-Dspring.datasource.url=jdbc:postgresql://db-doctors:5432/doctors_service", "-jar", "app.jar"]
+    depends_on:
+      db-doctors:
+        condition: service_healthy
+
+volumes:
+  users_data:
+  doctors_data:
