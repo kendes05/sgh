@@ -22,7 +22,7 @@ public class PatientService {
     public void registrar(PatientRequest request) {
         // 1. cria usuário no auth service
         AuthResponse authResponse = authClient.register(
-            new AuthRequest(request.getEmail(), "senha-temporaria", request.getNome())
+            new AuthRequest(request.getEmail(), request.getNome())
         );
 
         // 2. cria paciente
@@ -40,7 +40,7 @@ public class PatientService {
         // 3. envia email com senha temporária
         emailService.enviarEmail(
             request.getEmail(),
-            "Bem-vindo ao SGH",
+            "Bem-vindo ao SGH",request.getNome(),
             "Sua senha temporária é: " + authResponse.senha()
         );
 
