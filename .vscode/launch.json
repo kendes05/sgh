@@ -9,6 +9,16 @@
             "projectName": "user-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-PatientServiceApplication<patient-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.unifor.br.patient_service.PatientServiceApplication",
+            "projectName": "patient-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

@@ -1,14 +1,13 @@
 services:
-
-  postgres:
+  user-postgres:
     image: postgres:15
-    container_name: healthsys-postgres
+    container_name: healthsys-user-postgres
     env_file:
       - ./user-service/.env
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - user_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -23,8 +22,35 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      user-postgres:
+        condition: service_healthy
+
+  patient-postgres:
+    image: postgres:15
+    container_name: healthsys-patient-postgres
+    env_file:
+      - ./patient-service/.env
+    ports:
+      - "5434:5432"
+    volumes:
+      - patient_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  patient-service:
+    build: ./patient-service
+    container_name: healthsys-patient-service
+    env_file:
+      - ./patient-service/.env
+    ports:
+      - "8081:8080"
+    depends_on:
+      patient-postgres:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  user_postgres_data:
+  patient_postgres_data:

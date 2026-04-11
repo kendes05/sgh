@@ -24,8 +24,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registrar(@RequestBody RegisterRequest request) {
-        String token = authService.registrar(request);
-        return ResponseEntity.ok(Map.of("token", token));
+        Map<String, String> response = authService.registrar(request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
