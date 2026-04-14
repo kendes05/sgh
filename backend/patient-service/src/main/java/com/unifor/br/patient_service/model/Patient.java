@@ -35,6 +35,9 @@ public class Patient {
 
     @Column(nullable = false)
     private LocalDate dataNascimento;
+
+    @Column(nullable = false)
+    private String genero;
     
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

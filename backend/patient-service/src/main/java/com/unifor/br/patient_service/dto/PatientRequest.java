@@ -10,5 +10,6 @@ public class PatientRequest {
     String nome;
     String email;
     String telefone;
+    String genero;
     LocalDate dataNascimento;
 }
