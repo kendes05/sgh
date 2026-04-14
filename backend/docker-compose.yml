@@ -51,6 +51,18 @@ services:
       patient-postgres:
         condition: service_healthy
 
+  api-gateway:
+    build: ./api-gateway
+    container_name: healthsys-api-gateway
+    env_file:
+      - ./api-gateway/.env
+    ports:
+      - "8082:8082"
+    depends_on:
+      - user-service
+      - patient-service
+
+
 volumes:
   user_postgres_data:
   patient_postgres_data:

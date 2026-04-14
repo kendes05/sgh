@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>SGH - Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <h2>SGH - Sistema Hospitalar</h2>
+
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Senha" required />
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <p id="login-error" class="error"></p>
+  </div>
+
+  <!-- TROCAR SENHA -->
+  <div id="change-password-screen" class="hidden">
+    <h2>Trocar Senha</h2>
+
+    <form id="changePasswordForm">
+      <input type="password" id="currentPassword" placeholder="Senha atual" required />
+      <input type="password" id="newPassword" placeholder="Nova senha" required />
+
+      <button type="submit">Atualizar Senha</button>
+    </form>
+
+    <p id="change-error" class="error"></p>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
