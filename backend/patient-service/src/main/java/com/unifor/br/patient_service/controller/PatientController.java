@@ -48,9 +48,9 @@ public class PatientController {
         return ResponseEntity.ok(patientService.atualizar(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> desativar(@PathVariable UUID id) {
-        patientService.desativar(id);
+    @DeleteMapping("/{email}")
+    public ResponseEntity<?> deletar(@PathVariable String email) {
+        patientService.deletar(email);
         return ResponseEntity.noContent().build();
     }
 

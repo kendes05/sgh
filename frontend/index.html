@@ -231,6 +231,13 @@
             height: 100svh;
         }
 
+        #changePasswordScreen{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100svh;
+        }
+
         .logo {
             margin-bottom: 28px;
         }
@@ -1120,7 +1127,7 @@
                         </div>
                         <div class="feature-card" onclick="showDevMessage()">
                             <div class="feature-icon">📅</div>
-                            <h3>Cadastro de Enfermeiro</h3>
+                            <h3>Cadastro de Administrador</h3>
                             <span class="badge">Em Desenvolvimento</span>
                         </div>
                         <div class="feature-card" onclick="showDevMessage()">
@@ -1462,7 +1469,7 @@
                         <td>${status}</td>
                         <td>
                             <button class="action-btn btn-edit" onclick="editPatient('${patient.id}')">Editar</button>
-                            ${patient.isActive ? `<button class="action-btn btn-delete" onclick="deletePatient('${patient.id}', '${patient.nome}')">Desativar</button>` : ''}
+                            ${patient.isActive ? `<button class="action-btn btn-delete" onclick="deletePatient('${patient.email}', '${patient.nome}')">Desativar</button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -1562,13 +1569,13 @@
             }
         }
 
-        async function deletePatient(id, name) {
+        async function deletePatient(email, name) {
             if (!confirm(`Deseja realmente desativar o paciente ${name}?`)) {
                 return;
             }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/patient/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/patient/${email}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${authToken}`

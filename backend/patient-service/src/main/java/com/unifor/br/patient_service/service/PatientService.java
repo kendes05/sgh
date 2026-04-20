@@ -91,10 +91,13 @@ public class PatientService {
         return toResponse(patient);
     }
 
-    public void desativar(UUID id) {
-        Patient patient = repository.findByIdAndIsActiveTrue(id);
-        patient.setIsActive(false);
-        repository.save(patient);
+    public void deletar(String email) {
+        Patient patient = repository.findByEmailAndIsActiveTrue(email);
+        if (patient == null) {
+            throw new RuntimeException("Paciente não encontrado");
+        }
+        authClient.deleteAccount(email);
+        repository.delete(patient);
     }
 
  

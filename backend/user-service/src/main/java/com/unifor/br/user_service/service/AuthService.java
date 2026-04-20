@@ -74,6 +74,12 @@ public class AuthService {
         return new LoginResponse(token, usuario.getMustChangePassword(), toUserLoginResponse(usuario));
     }
 
+    public void deleteAccount(String email) {
+        Usuario usuario = repository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        repository.delete(usuario);
+    }
+
     public void changePassword(String email, ChangePasswordRequest request) {
             Usuario usuario = repository.findByEmail(email)
         .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));

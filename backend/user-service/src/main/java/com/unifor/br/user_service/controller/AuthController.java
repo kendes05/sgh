@@ -34,6 +34,12 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> deleteAccount(@RequestBody String email) {
+        authService.deleteAccount(email);
+        return ResponseEntity.ok("Conta deletada com sucesso");
+    }
+
     @PatchMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
         String token = httpRequest.getHeader("Authorization").substring(7);
