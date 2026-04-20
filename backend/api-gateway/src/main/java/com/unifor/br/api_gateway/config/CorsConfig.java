@@ -16,6 +16,8 @@ public class CorsConfig {
         // IMPORTANTE: Adicione AMBAS as origens
         corsConfig.addAllowedOrigin("http://localhost:5500");
         corsConfig.addAllowedOrigin("http://127.0.0.1:5500");
+        corsConfig.addAllowedOrigin("http://localhost:5173");
+        corsConfig.addAllowedOrigin("http://127.0.0.1:5173");
         
         // Permita todos os métodos (incluindo OPTIONS para preflight)
         corsConfig.addAllowedMethod("*");

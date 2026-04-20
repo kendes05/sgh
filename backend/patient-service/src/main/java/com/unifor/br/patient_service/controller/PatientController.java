@@ -48,6 +48,12 @@ public class PatientController {
         return ResponseEntity.ok(patientService.atualizar(id, request));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> desativar(@PathVariable UUID id) {
+        patientService.desativar(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @GetMapping("/hello")
     public String getMethodName() {

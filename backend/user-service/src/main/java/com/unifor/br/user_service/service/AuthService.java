@@ -14,7 +14,9 @@ import com.unifor.br.user_service.dto.ChangePasswordRequest;
 import com.unifor.br.user_service.dto.LoginRequest;
 import com.unifor.br.user_service.dto.LoginResponse;
 import com.unifor.br.user_service.dto.RegisterRequest;
+import com.unifor.br.user_service.dto.UserLoginResponse;
 import com.unifor.br.user_service.model.Usuario;
+import com.unifor.br.user_service.model.Usuario.Role;
 import com.unifor.br.user_service.repository.UsuarioRepository;
 import com.unifor.br.user_service.security.JwtService;
 import com.unifor.br.user_service.security.PasswordGenerator;
@@ -30,6 +32,8 @@ public class AuthService {
     private final PasswordGenerator passwordGenerator;
 
 
+
+    // Rota interna
     public Map<String, String> registrar(RegisterRequest request) {
         if (repository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email já cadastrado!");
@@ -38,8 +42,9 @@ public class AuthService {
         Usuario usuario = new Usuario();
         usuario.setNome(request.getNome());
         usuario.setEmail(request.getEmail());
+        usuario.setRole(Role.valueOf(request.getRole().toLowerCase()));
 
-        String userPassword = passwordGenerator.gerarSenha(); // Gerar senha temporária
+        String userPassword = passwordGenerator.gerarSenha();
 
         usuario.setSenha(passwordEncoder.encode(userPassword));
 
@@ -66,7 +71,7 @@ public class AuthService {
             .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         String token = jwtService.gerarToken(request.getEmail());
-        return new LoginResponse(token, usuario.getMustChangePassword());
+        return new LoginResponse(token, usuario.getMustChangePassword(), toUserLoginResponse(usuario));
     }
 
     public void changePassword(String email, ChangePasswordRequest request) {
@@ -85,5 +90,13 @@ public class AuthService {
         usuario.setMustChangePassword(false);
         repository.save(usuario);
 
+    }
+
+    private UserLoginResponse toUserLoginResponse(Usuario usuario) {
+        UserLoginResponse response = new UserLoginResponse();
+        response.setNome(usuario.getNome());
+        response.setEmail(usuario.getEmail());
+        response.setRole(usuario.getRole().name());
+        return response;
     }
 }

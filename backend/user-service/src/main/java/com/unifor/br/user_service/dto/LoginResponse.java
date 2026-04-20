@@ -1,5 +1,6 @@
 package com.unifor.br.user_service.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,4 +9,5 @@ import lombok.Data;
 public class LoginResponse {
     private String token;
     private Boolean mustChangePassword;
+    private UserLoginResponse user;
 }

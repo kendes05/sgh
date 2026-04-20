@@ -33,7 +33,7 @@ public class PatientService {
  
         // 2. Cria usuário no serviço de Auth
         AuthResponse authResponse = authClient.register(
-            new AuthRequest(request.getEmail(), request.getNome())
+            new AuthRequest(request.getEmail(), request.getNome(), "PATIENT")
         );
  
         // 3. Persiste o paciente com o authUserId retornado
@@ -89,6 +89,12 @@ public class PatientService {
  
         repository.save(patient);
         return toResponse(patient);
+    }
+
+    public void desativar(UUID id) {
+        Patient patient = repository.findByIdAndIsActiveTrue(id);
+        patient.setIsActive(false);
+        repository.save(patient);
     }
 
  
