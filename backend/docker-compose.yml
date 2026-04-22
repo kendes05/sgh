@@ -51,6 +51,32 @@ services:
       patient-postgres:
         condition: service_healthy
 
+  doctor-service:
+    build: ./doctor-service
+    container_name: healthsys-doctor-service
+    env_file:
+      - ./doctor-service/.env
+    ports:
+      - "8083:8080"
+    depends_on:
+      doctor-postgres:
+        condition: service_healthy
+
+  doctor-postgres:
+    image: postgres:15
+    container_name: healthsys-doctor-postgres
+    env_file:
+      - ./doctor-service/.env
+    ports:
+      - "5435:5432"
+    volumes:
+      - doctor_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api-gateway:
     build: ./api-gateway
     container_name: healthsys-api-gateway
@@ -61,8 +87,9 @@ services:
     depends_on:
       - user-service
       - patient-service
-
+      - doctor-service
 
 volumes:
   user_postgres_data:
   patient_postgres_data:
+  doctor_postgres_data:
