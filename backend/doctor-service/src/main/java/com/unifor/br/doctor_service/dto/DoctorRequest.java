@@ -10,8 +10,11 @@ public class DoctorRequest {
     @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
     private String nome;
 
+    @NotBlank(message = "Role é obrigatório")
+    private String role;
+
     @NotBlank(message = "CRM é obrigatório")
-    private String crm;
+    private String crm_coren;
 
     @NotBlank(message = "Sexo é obrigatório")
     private String sexo;

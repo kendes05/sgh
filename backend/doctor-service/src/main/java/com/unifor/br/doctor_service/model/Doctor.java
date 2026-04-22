@@ -34,9 +34,13 @@ public class Doctor {
     @Column(name = "nome", nullable = false, length = 100)
     private String nome;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @NotBlank(message = "CRM é obrigatório")
-    @Column(name = "crm", nullable = false, unique = true, length = 20)
-    private String crm;
+    @Column(name = "crm_coren", nullable = false, unique = true, length = 20)
+    private String crm_coren;
 
     @NotBlank(message = "Sexo é obrigatório")
     @Column(name = "sexo", nullable = false)
@@ -52,7 +56,7 @@ public class Doctor {
     private String telefone;
 
     @NotBlank(message = "Especialidade principal é obrigatória")
-    @Column(name = "especialidade_principal", nullable = false, length = 100)
+    @Column(name = "especialidade_principal", length = 100)
     private String especialidadePrincipal;
 
     @CreationTimestamp
@@ -62,5 +66,9 @@ public class Doctor {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public enum Role {
+        medic, nurse
+    }
 
 }

@@ -28,7 +28,7 @@ public class Usuario {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.patient;
+    private Role role;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

@@ -26,7 +26,7 @@ public class DoctorController {
     private final DoctorService doctorService;
 
 
-    // GET /doctors — listagem de todos os médicos
+    // GET /doctors — listagem de todos os profissionais de saúde
     @GetMapping
     public List<DoctorResponse> listDoctors() {
         return doctorService.listDoctors();
@@ -38,7 +38,14 @@ public class DoctorController {
         return doctorService.getDoctorById(id);
     }
 
-    // Post /doctors — cadastro de novo médico
+    // GET /doctors/role/{role} — filtrar pela Role
+    @GetMapping("/role/{role}")
+    public List<DoctorResponse> getDoctorsByRole(@PathVariable String role) {
+        return doctorService.getDoctorsByRole(role);
+    }
+
+
+    // Post /doctors — cadastro de novo profissional de saúde (médico, enfermeiro)
     @PostMapping
     public DoctorResponse registerDoctor(@RequestBody DoctorRequest request) {
         return doctorService.registerDoctor(request);
