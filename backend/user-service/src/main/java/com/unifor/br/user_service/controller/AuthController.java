@@ -22,6 +22,13 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
 
+    @GetMapping("/validate")
+    public boolean validateToken(HttpServletRequest httpRequest) {
+        String token = httpRequest.getHeader("Authorization").substring(7);
+        boolean isValid = jwtService.tokenValido(token);
+        return isValid;
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> registrar(@RequestBody RegisterRequest request) {
         Map<String, String> response = authService.registrar(request);

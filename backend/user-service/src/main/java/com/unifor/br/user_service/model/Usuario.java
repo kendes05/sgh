@@ -48,6 +48,6 @@ public class Usuario {
     private LocalDateTime updatedAt;
 
     public enum Role {
-        patient, doctor, admin
+        patient, medic, admin, nurse
     }
 }

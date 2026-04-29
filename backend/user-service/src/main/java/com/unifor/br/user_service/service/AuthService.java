@@ -42,6 +42,7 @@ public class AuthService {
         Usuario usuario = new Usuario();
         usuario.setNome(request.getNome());
         usuario.setEmail(request.getEmail());
+        System.out.println("Usuario recebido: " + request.getEmail() + ", Role: " + request.getRole());
         usuario.setRole(Role.valueOf(request.getRole().toLowerCase()));
 
         String userPassword = passwordGenerator.gerarSenha();

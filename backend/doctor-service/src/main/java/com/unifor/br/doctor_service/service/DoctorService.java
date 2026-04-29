@@ -32,8 +32,10 @@ public class DoctorService {
  
         // 2. Cria usuário no serviço de Auth
         AuthResponse authResponse = authClient.register(
-            new AuthRequest(request.getEmail(), request.getNome(), "DOCTOR")
+            new AuthRequest(request.getEmail(), request.getNome(), "medic")
         );
+
+        String roleDoctorModal = request.getRole().toLowerCase();
  
         // 3. Persiste o médico com o authUserId retornado
         Doctor doctor = Doctor.builder()
@@ -44,7 +46,7 @@ public class DoctorService {
                 .sexo(request.getSexo())
                 .especialidadePrincipal(request.getEspecialidadePrincipal())
                 .crm_coren(request.getCrm_coren())
-                .role(Role.valueOf(request.getRole().toLowerCase()))
+                .role(Role.valueOf(roleDoctorModal))
                 .build();
  
         repository.save(doctor);

@@ -51,17 +51,6 @@ services:
       patient-postgres:
         condition: service_healthy
 
-  doctor-service:
-    build: ./doctor-service
-    container_name: healthsys-doctor-service
-    env_file:
-      - ./doctor-service/.env
-    ports:
-      - "8083:8080"
-    depends_on:
-      doctor-postgres:
-        condition: service_healthy
-
   doctor-postgres:
     image: postgres:15
     container_name: healthsys-doctor-postgres
@@ -77,6 +66,44 @@ services:
       timeout: 5s
       retries: 5
 
+  doctor-service:
+    build: ./doctor-service
+    container_name: healthsys-doctor-service
+    env_file:
+      - ./doctor-service/.env
+    ports:
+      - "8083:8080"
+    depends_on:
+      doctor-postgres:
+        condition: service_healthy
+
+  screening-postgres:
+    image: postgres:15
+    container_name: healthsys-screening-postgres
+    env_file:
+      - ./screening-service/.env
+    ports:
+      - "5436:5432"
+    volumes:
+      - screening_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  screening-service:
+    build: ./screening-service
+    container_name: healthsys-screening-service
+    env_file:
+      - ./screening-service/.env
+    ports:
+      - "8084:8080"
+    depends_on:
+      screening-postgres:
+        condition: service_healthy
+
+
   api-gateway:
     build: ./api-gateway
     container_name: healthsys-api-gateway
@@ -88,8 +115,28 @@ services:
       - user-service
       - patient-service
       - doctor-service
+      - screening-service
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
 
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+  
 volumes:
   user_postgres_data:
   patient_postgres_data:
   doctor_postgres_data:
+  screening_postgres_data:

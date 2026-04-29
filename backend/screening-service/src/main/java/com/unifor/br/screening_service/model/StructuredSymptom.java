@@ -1,0 +1,25 @@
+package com.unifor.br.screening_service.model;
+
+public enum StructuredSymptom {
+    TOSSE,
+    FALTA_DE_AR,
+    CHIADO_NO_PEITO,
+    DOR_AO_RESPIRAR,
+    DOR_NO_PEITO,
+    PALPITACOES,
+    INCHACO_NAS_PERNAS,
+    NAUSEA,
+    VOMITO,
+    VOMITO_PERSISTENTE,
+    DIARREIA,
+    DOR_ABDOMINAL,
+    TONTURA,
+    CEFALEIA,
+    ALTERACAO_VISUAL,
+    FRAQUEZA_EM_MEMBROS,
+    TRAUMA,
+    HEMORRAGIA_ATIVA,
+    CONVULSAO,
+    SINAIS_DESIDRATACAO,
+    FERIMENTO_COM_CORTE
+}

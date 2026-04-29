@@ -1,6 +1,5 @@
 package com.unifor.br.user_service.dto;
 
-import com.unifor.br.user_service.model.Usuario;
 
 import lombok.Data;
 
