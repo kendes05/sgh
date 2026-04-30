@@ -1,46 +1,51 @@
 package com.unifor.br.patient_service.controller;
 
+import java.util.UUID;
 
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.unifor.br.patient_service.dto.PatientRequest;
 import com.unifor.br.patient_service.dto.PatientUpdateRequest;
 import com.unifor.br.patient_service.service.PatientService;
 
 import jakarta.validation.Valid;
-
-import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/patient")
+@RequestMapping("/patients")
 @RequiredArgsConstructor
 public class PatientController {
 
     private final PatientService patientService;
 
-    // POST /pacientes — cadastro de novo paciente
     @PostMapping
     public ResponseEntity<?> cadastrar(@RequestBody @Valid PatientRequest request) {
-        return ResponseEntity.status(201).body(patientService.registrar(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientService.registrar(request));
     }
 
-    // GET /pacientes — listagem de todos os pacientes
     @GetMapping
-    public ResponseEntity<?> listar() {
+    public ResponseEntity<?> listar(@RequestParam(required = false) String email) {
+        if (email != null && !email.isBlank()) {
+            return ResponseEntity.ok(patientService.buscarPorEmail(email));
+        }
         return ResponseEntity.ok(patientService.listarTodos());
     }
 
-    // GET /pacientes/{email} — busca por email
-    @GetMapping("/{email}")
-    public ResponseEntity<?> buscarPorEmail(@PathVariable String email) {
-        return ResponseEntity.ok(patientService.buscarPorEmail(email));
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(patientService.buscarPorId(id));
     }
 
-    // PUT /pacientes/{id} — atualização dos dados
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizar(
             @PathVariable UUID id,
@@ -48,18 +53,9 @@ public class PatientController {
         return ResponseEntity.ok(patientService.atualizar(id, request));
     }
 
-    @DeleteMapping("/{email}")
-    public ResponseEntity<?> deletar(@PathVariable String email) {
-        patientService.deletar(email);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletar(@PathVariable UUID id) {
+        patientService.deletar(id);
         return ResponseEntity.noContent().build();
     }
-
-
-    @GetMapping("/hello")
-    public String getMethodName() {
-        return "Hello World";
-    }
-    
-
-
 }

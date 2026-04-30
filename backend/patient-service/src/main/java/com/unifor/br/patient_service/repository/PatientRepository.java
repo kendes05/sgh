@@ -1,20 +1,28 @@
 package com.unifor.br.patient_service.repository;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.unifor.br.patient_service.model.Patient;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+public interface PatientRepository extends JpaRepository<Patient, UUID> {
 
-public interface PatientRepository extends JpaRepository<Patient, java.util.UUID> {
     Optional<Patient> findByEmail(String email);
+
     List<Patient> findAllByIsActiveTrue();
-    Patient findByIdAndIsActiveTrue(UUID id);
 
-    Patient findByEmailAndIsActiveTrue(String email);
+    Optional<Patient> findByIdAndIsActiveTrue(UUID id);
 
-    Boolean existsByEmail(String email);
+    Optional<Patient> findByEmailAndIsActiveTrue(String email);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIsActiveTrue(String email);
+
+    boolean existsByEmailAndIdNot(String email, UUID id);
+
+    boolean existsByEmailAndIdNotAndIsActiveTrue(String email, UUID id);
 }

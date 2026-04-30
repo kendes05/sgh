@@ -1,18 +1,19 @@
 package com.unifor.br.user_service.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
+import java.security.Key;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.security.Key;
-import java.util.Date;
+
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
 
-    
     @Value("${jwt.secret}")
     private String secret;
 
@@ -23,35 +24,29 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    @PostConstruct
-    public void init() {
-        System.out.println(">>> JWT SECRET carregado: " + secret);
-        System.out.println(">>> JWT EXPIRATION carregado: " + expiracao);
-    }
-
     public String gerarToken(String email) {
         return Jwts.builder()
-            .setSubject(email)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + expiracao))
-            .signWith(getKey(), SignatureAlgorithm.HS256)
-            .compact();
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiracao))
+                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public String extrairEmail(String token) {
         return Jwts.parserBuilder()
-            .setSigningKey(getKey())
-            .build()
-            .parseClaimsJws(token)
-            .getBody()
-            .getSubject();
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
     public boolean tokenValido(String token) {
         try {
             extrairEmail(token);
             return true;
-        } catch (JwtException e) {
+        } catch (JwtException ex) {
             return false;
         }
     }
