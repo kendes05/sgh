@@ -12,8 +12,8 @@ const featureCards = [
   {
     icon: 'MD',
     title: 'Gerenciamento de Profissional',
-    description: 'Acesse o CRUD da equipe clínica e mantenha os cadastros sempre atualizados.',
-    badge: 'Disponível',
+    description: 'Acesse o CRUD da equipe clinica e mantenha os cadastros sempre atualizados.',
+    badge: 'Disponivel',
     action: 'doctor-management',
   },
   {
@@ -22,9 +22,11 @@ const featureCards = [
     description: 'Estrutura reservada para ampliar o gerenciamento interno do sistema.',
   },
   {
-    icon: 'PR',
-    title: 'Prontuários',
-    description: 'Área pensada para consolidar histórico clínico e documentos.',
+    icon: 'TR',
+    title: 'Triagem',
+    description: 'Area pensada para realizar e consultar triagens, otimizando o atendimento e a organizacao clinica.',
+    badge: 'Disponivel',
+    action: 'screening-management',
   },
 ];
 
@@ -60,7 +62,7 @@ const AdminDashboard = () => {
       {
         label: 'Total de Pacientes',
         value: patients.length,
-        caption: 'Registros disponíveis no sistema',
+        caption: 'Registros disponiveis no sistema',
         className: '',
       },
       {
@@ -72,7 +74,7 @@ const AdminDashboard = () => {
       {
         label: 'Funcionalidades',
         value: 3,
-        caption: 'Módulos mapeados para expansão',
+        caption: 'Modulos mapeados para expansao',
         className: 'warning',
       },
     ],
@@ -152,13 +154,18 @@ const AdminDashboard = () => {
       return;
     }
 
+    if (feature.action === 'screening-management') {
+      navigate('/admin/triagens');
+      return;
+    }
+
     window.alert('Funcionalidade em desenvolvimento.\n\nEla vai aparecer por aqui em breve.');
   };
 
   return (
     <DashboardLayout
       title="SGH - Painel Administrativo"
-      subtitle="Controle de pacientes e visão geral operacional"
+      subtitle="Controle de pacientes e visao geral operacional"
       userName={currentUser?.nome ?? 'Administrador'}
       onLogout={logout}
     >
@@ -179,7 +186,7 @@ const AdminDashboard = () => {
           <div>
             <span className="section-kicker">Pacientes</span>
             <h2>Gerenciar Pacientes</h2>
-            <p className="section-copy">Cadastre, atualize e acompanhe o status dos pacientes em um só lugar.</p>
+            <p className="section-copy">Cadastre, atualize e acompanhe o status dos pacientes em um so lugar.</p>
           </div>
 
           <button type="button" className="btn btn-inline" onClick={openCreateModal}>
@@ -198,9 +205,9 @@ const AdminDashboard = () => {
       <section className="section">
         <div className="section-header">
           <div>
-            <span className="section-kicker">Expansão</span>
+            <span className="section-kicker">Expansao</span>
             <h2>Outras Funcionalidades</h2>
-            <p className="section-copy">A base já está pronta para crescer sem voltar ao HTML monolítico.</p>
+            <p className="section-copy">A base ja esta pronta para crescer sem voltar ao HTML monolitico.</p>
           </div>
         </div>
 

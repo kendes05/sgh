@@ -69,7 +69,7 @@ export const validateToken = async () => {
 
 export const getAllPatients = async () => {
   try {
-    const response = await api.get('/patient');
+    const response = await api.get('/patients');
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao carregar lista de pacientes');
@@ -78,7 +78,7 @@ export const getAllPatients = async () => {
 
 export const createPatient = async (patientData) => {
   try {
-    const response = await api.post('/patient', patientData);
+    const response = await api.post('/patients', patientData);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao cadastrar paciente');
@@ -87,7 +87,7 @@ export const createPatient = async (patientData) => {
 
 export const updatePatient = async (id, patientData) => {
   try {
-    const response = await api.put(`/patient/${id}`, patientData);
+    const response = await api.put(`/patients/${id}`, patientData);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao atualizar paciente');
@@ -143,6 +143,76 @@ export const deleteDoctor = async (id) => {
     await api.delete(`/doctor/${id}`);
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao remover profissional');
+  }
+};
+
+const getApiErrorMessage = (error, fallbackMessage) => {
+  const responseData = error.response?.data;
+
+  if (responseData?.fieldErrors && typeof responseData.fieldErrors === 'object') {
+    const fieldMessage = Object.entries(responseData.fieldErrors)
+      .map(([field, message]) => `${field}: ${message}`)
+      .join(' | ');
+
+    if (fieldMessage) {
+      return fieldMessage;
+    }
+  }
+
+  return responseData?.message || fallbackMessage;
+};
+
+export const getAllScreenings = async (filters = {}) => {
+  try {
+    const response = await api.get('/screenings', { params: filters });
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao carregar lista de triagens'));
+  }
+};
+
+export const getScreeningById = async (id) => {
+  try {
+    const response = await api.get(`/screenings/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao carregar dados da triagem'));
+  }
+};
+
+export const createScreening = async (screeningData) => {
+  try {
+    const response = await api.post('/screenings', screeningData);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao criar triagem'));
+  }
+};
+
+export const suggestScreeningClassification = async (id) => {
+  try {
+    const response = await api.post(`/screenings/${id}/classification/suggestion`);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao sugerir classificacao da triagem'));
+  }
+};
+
+export const validateScreeningClassification = async (id, payload) => {
+  try {
+    const response = await api.post(`/screenings/${id}/classification`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao validar classificacao da triagem'));
+  }
+};
+
+export const routeScreening = async (id, payload) => {
+  try {
+    const response = await api.post(`/screenings/${id}/routing`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao encaminhar triagem'));
   }
 };
 

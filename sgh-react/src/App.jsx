@@ -5,6 +5,7 @@ import LoginScreen from './components/auth/LoginScreen';
 import ChangePassword from './components/auth/ChangePassword';
 import AdminDashboard from './components/admin/AdminDashboard';
 import DoctorManagementPage from './components/admin/DoctorManagementPage';
+import ScreeningManagementPage from './components/admin/ScreeningManagementPage';
 import PatientDashboard from './components/patient/PatientDashboard';
 
 const normalizeRole = (role) => role?.toLowerCase?.() ?? '';
@@ -87,6 +88,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <DoctorManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/triagens"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ScreeningManagementPage />
               </ProtectedRoute>
             }
           />
