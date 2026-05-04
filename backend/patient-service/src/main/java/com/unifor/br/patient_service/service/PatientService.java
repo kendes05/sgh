@@ -13,8 +13,9 @@ import com.unifor.br.patient_service.client.UpdateUserEmailRequest;
 import com.unifor.br.patient_service.dto.PatientRequest;
 import com.unifor.br.patient_service.dto.PatientResponse;
 import com.unifor.br.patient_service.dto.PatientUpdateRequest;
+import com.unifor.br.patient_service.exception.ConflictException;
+import com.unifor.br.patient_service.exception.ResourceNotFoundException;
 import com.unifor.br.patient_service.model.Patient;
-import com.unifor.br.patient_service.exception.*;
 import com.unifor.br.patient_service.repository.PatientRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,8 +31,13 @@ public class PatientService {
     @Transactional
     public PatientResponse registrar(PatientRequest request) {
         String normalizedEmail = normalizeEmail(request.getEmail());
+        String normalizedCpf   = normalizeCpf(request.getCpf());
+
         if (repository.existsByEmail(normalizedEmail)) {
             throw new ConflictException("Ja existe um paciente com este email.");
+        }
+        if (repository.existsByCpf(normalizedCpf)) {
+            throw new ConflictException("Ja existe um paciente com este CPF.");
         }
 
         AuthResponse authResponse = authClient.register(
@@ -40,11 +46,13 @@ public class PatientService {
         try {
             Patient patient = Patient.builder()
                     .email(normalizedEmail)
+                    .cpf(normalizedCpf)
                     .userAuthId(authResponse.authUserId())
                     .nome(request.getNome().trim())
                     .telefone(request.getTelefone().trim())
                     .dataNascimento(request.getDataNascimento())
-                    .genero(request.getGenero().trim())
+                    .genero(request.getGenero())
+                    .tipoSanguineo(request.getTipoSanguineo())
                     .isActive(true)
                     .build();
 
@@ -83,6 +91,13 @@ public class PatientService {
         return toResponse(patient);
     }
 
+    @Transactional(readOnly = true)
+    public PatientResponse buscarPorCpf(String cpf) {
+        Patient patient = repository.findByCpfAndIsActiveTrue(normalizeCpf(cpf))
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente nao encontrado."));
+        return toResponse(patient);
+    }
+
     @Transactional
     public PatientResponse atualizar(UUID id, PatientUpdateRequest request) {
         Patient patient = getActivePatient(id);
@@ -97,7 +112,17 @@ public class PatientService {
             patient.setDataNascimento(request.dataNascimento());
         }
         if (request.genero() != null) {
-            patient.setGenero(request.genero().trim());
+            patient.setGenero(request.genero());
+        }
+        if (request.tipoSanguineo() != null) {
+            patient.setTipoSanguineo(request.tipoSanguineo());
+        }
+        if (request.cpf() != null) {
+            String normalizedCpf = normalizeCpf(request.cpf());
+            if (repository.existsByCpfAndIdNot(normalizedCpf, id)) {
+                throw new ConflictException("Ja existe um paciente com este CPF.");
+            }
+            patient.setCpf(normalizedCpf);
         }
         if (request.email() != null) {
             String normalizedEmail = normalizeEmail(request.email());
@@ -106,7 +131,8 @@ public class PatientService {
             }
             patient.setEmail(normalizedEmail);
             repository.saveAndFlush(patient);
-            authClient.updateEmail(UUID.fromString(patient.getUserAuthId()), new UpdateUserEmailRequest(normalizedEmail));
+            authClient.updateEmail(UUID.fromString(patient.getUserAuthId()),
+                    new UpdateUserEmailRequest(normalizedEmail));
             return toResponse(patient);
         }
 
@@ -121,6 +147,10 @@ public class PatientService {
         authClient.deactivateAccount(UUID.fromString(patient.getUserAuthId()));
     }
 
+    // -------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------
+
     private Patient getActivePatient(UUID id) {
         return repository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente nao encontrado."));
@@ -131,10 +161,17 @@ public class PatientService {
                 patient.getId(),
                 patient.getNome(),
                 patient.getEmail(),
+                patient.getCpf(),
                 patient.getDataNascimento(),
                 patient.getGenero(),
+                patient.getTipoSanguineo(),
                 patient.getTelefone(),
                 patient.getIsActive());
+    }
+
+    /** Remove pontos e traços do CPF para armazenamento uniforme (somente dígitos). */
+    private String normalizeCpf(String cpf) {
+        return cpf.replaceAll("[^\\d]", "");
     }
 
     private String normalizeEmail(String email) {

@@ -2,10 +2,14 @@ package com.unifor.br.patient_service.dto;
 
 import java.time.LocalDate;
 
+import com.unifor.br.patient_service.model.Patient.Genero;
+import com.unifor.br.patient_service.model.Patient.TipoSanguineo;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,12 +24,22 @@ public class PatientRequest {
     @Email(message = "Email invalido")
     private String email;
 
+    @NotBlank(message = "CPF e obrigatorio")
+    @Pattern(
+        regexp = "\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}",
+        message = "CPF invalido. Informe no formato 000.000.000-00 ou apenas os digitos"
+    )
+    private String cpf;
+
     @NotBlank(message = "Telefone e obrigatorio")
     @Size(max = 20, message = "Telefone deve ter no maximo 20 caracteres")
     private String telefone;
 
-    @NotBlank(message = "Genero e obrigatorio")
-    private String genero;
+    @NotNull(message = "Genero e obrigatorio")
+    private Genero genero;
+
+    @NotNull(message = "Tipo sanguineo e obrigatorio")
+    private TipoSanguineo tipoSanguineo;
 
     @NotNull(message = "Data de nascimento e obrigatoria")
     @Past(message = "Data de nascimento deve estar no passado")

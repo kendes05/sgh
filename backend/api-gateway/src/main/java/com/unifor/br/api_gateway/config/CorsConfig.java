@@ -25,12 +25,15 @@ public class CorsConfig {
         // Permita todos os headers
         corsConfig.addAllowedHeader("*");
         
-        // Se você está enviando cookies ou Authorization header
+        // Credenciais (necessário para Authorization header)
         corsConfig.setAllowCredentials(true);
-        
-        // Headers que o frontend pode ler
-        corsConfig.addExposedHeader("*");
-        
+
+        // Headers que o frontend pode ler na resposta
+        corsConfig.addExposedHeader("Authorization");
+        corsConfig.addExposedHeader("X-User-Id");
+        corsConfig.addExposedHeader("X-User-Role");
+        corsConfig.addExposedHeader("X-User-Email");
+
         // Cache da requisição preflight
         corsConfig.setMaxAge(3600L);
         

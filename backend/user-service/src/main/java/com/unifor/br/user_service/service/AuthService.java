@@ -1,5 +1,6 @@
 package com.unifor.br.user_service.service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -61,7 +62,7 @@ public class AuthService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         String normalizedEmail = request.getEmail().trim().toLowerCase();
         try {
@@ -74,7 +75,10 @@ public class AuthService {
         Usuario usuario = repository.findByEmailAndIsActiveTrue(normalizedEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado ou inativo."));
 
-        String token = jwtService.gerarToken(normalizedEmail);
+        usuario.setLastLogin(LocalDateTime.now());
+        repository.save(usuario);
+
+        String token = jwtService.gerarToken(usuario);
         return new LoginResponse(token, usuario.getMustChangePassword(), toUserLoginResponse(usuario));
     }
 
@@ -121,6 +125,7 @@ public class AuthService {
 
     private UserLoginResponse toUserLoginResponse(Usuario usuario) {
         UserLoginResponse response = new UserLoginResponse();
+        response.setUserId(usuario.getId().toString());
         response.setNome(usuario.getNome());
         response.setEmail(usuario.getEmail());
         response.setRole(usuario.getRole().name());

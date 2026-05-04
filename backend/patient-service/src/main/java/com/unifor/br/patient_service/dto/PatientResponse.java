@@ -3,12 +3,17 @@ package com.unifor.br.patient_service.dto;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.unifor.br.patient_service.model.Patient.Genero;
+import com.unifor.br.patient_service.model.Patient.TipoSanguineo;
+
 public record PatientResponse(
     UUID id,
     String nome,
     String email,
+    String cpf,
     LocalDate dataNascimento,
-    String genero,
+    Genero genero,
+    TipoSanguineo tipoSanguineo,
     String telefone,
     boolean isActive
 ) {}

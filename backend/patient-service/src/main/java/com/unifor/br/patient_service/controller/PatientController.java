@@ -46,6 +46,11 @@ public class PatientController {
         return ResponseEntity.ok(patientService.buscarPorId(id));
     }
 
+    @GetMapping("/cpf/{cpf}")
+    public ResponseEntity<?> buscarPorCpf(@PathVariable String cpf) {
+        return ResponseEntity.ok(patientService.buscarPorCpf(cpf));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizar(
             @PathVariable UUID id,
