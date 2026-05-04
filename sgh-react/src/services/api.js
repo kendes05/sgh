@@ -111,6 +111,32 @@ export const getPatientByEmail = async (email) => {
   }
 };
 
+export const getActivePatientScreening = async (patientId) => {
+  try {
+    const response = await api.get(`/screenings/active/patient/${patientId}`);
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+
+    throw new Error(getApiErrorMessage(error, 'Erro ao carregar triagem ativa do paciente'));
+  }
+};
+
+export const getMedicalRecordByPatientId = async (patientId) => {
+  try {
+    const response = await api.get(`/medical-records/patient/${patientId}`);
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+
+    throw new Error(getApiErrorMessage(error, 'Erro ao carregar prontuario do paciente'));
+  }
+};
+
 export const getAllDoctors = async () => {
   try {
     const response = await api.get('/doctor');

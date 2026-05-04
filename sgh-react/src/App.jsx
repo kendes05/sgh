@@ -3,14 +3,32 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import LoginScreen from './components/auth/LoginScreen';
 import ChangePassword from './components/auth/ChangePassword';
-import AdminDashboard from './components/admin/AdminDashboard';
+import AdminDashboard from './components/dashboard/AdminDashboard';
+import MedicDashboard from './components/dashboard/MedicDashboard';
+import NurseDashboard from './components/dashboard/NurseDashboard';
+import PatientDashboard from './components/dashboard/PatientDashboard';
+import LegacyAdminDashboard from './components/admin/AdminDashboard';
 import DoctorManagementPage from './components/admin/DoctorManagementPage';
 import ScreeningManagementPage from './components/admin/ScreeningManagementPage';
-import PatientDashboard from './components/patient/PatientDashboard';
 
 const normalizeRole = (role) => role?.toLowerCase?.() ?? '';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const getDashboardRouteForRole = (role) => {
+  switch (normalizeRole(role)) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'medic':
+      return '/medic/dashboard';
+    case 'nurse':
+      return '/nurse/dashboard';
+    case 'patient':
+      return '/patient/dashboard';
+    default:
+      return '/';
+  }
+};
+
+const ProtectedRoute = ({ children, requiredRole, requiredRoles }) => {
   const { isAuthenticated, currentUser, isLoading } = useAuth();
 
   if (isLoading) {
@@ -31,8 +49,14 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (requiredRole && normalizeRole(currentUser?.role) !== requiredRole) {
-    return <Navigate to={normalizeRole(currentUser?.role) === 'admin' ? '/admin' : '/paciente'} replace />;
+  const normalizedRole = normalizeRole(currentUser?.role);
+
+  if (requiredRole && normalizedRole !== requiredRole) {
+    return <Navigate to={getDashboardRouteForRole(currentUser?.role)} replace />;
+  }
+
+  if (requiredRoles && !requiredRoles.includes(normalizedRole)) {
+    return <Navigate to={getDashboardRouteForRole(currentUser?.role)} replace />;
   }
 
   return children;
@@ -58,7 +82,7 @@ const RoleBasedRedirect = () => {
     return <LoginScreen />;
   }
 
-  return <Navigate to={normalizeRole(currentUser?.role) === 'admin' ? '/admin' : '/paciente'} replace />;
+  return <Navigate to={getDashboardRouteForRole(currentUser?.role)} replace />;
 };
 
 function App() {
@@ -77,9 +101,21 @@ function App() {
           />
           <Route
             path="/admin"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
+          <Route
+            path="/admin/dashboard"
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pacientes"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <LegacyAdminDashboard />
               </ProtectedRoute>
             }
           />
@@ -100,12 +136,40 @@ function App() {
             }
           />
           <Route
-            path="/paciente"
+            path="/medic/dashboard"
+            element={
+              <ProtectedRoute requiredRole="medic">
+                <MedicDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nurse/dashboard"
+            element={
+              <ProtectedRoute requiredRole="nurse">
+                <NurseDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient/dashboard"
             element={
               <ProtectedRoute requiredRole="patient">
                 <PatientDashboard />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/screenings"
+            element={
+              <ProtectedRoute requiredRoles={['admin', 'medic', 'nurse']}>
+                <ScreeningManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/paciente"
+            element={<Navigate to="/patient/dashboard" replace />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
