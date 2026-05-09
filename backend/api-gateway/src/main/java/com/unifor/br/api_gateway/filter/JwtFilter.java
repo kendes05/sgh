@@ -7,6 +7,7 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -53,11 +54,21 @@ public class JwtFilter implements GlobalFilter, Ordered {
         String role   = claims.get("role",   String.class);
         String email  = claims.getSubject();
 
-        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                .header("X-User-Id",    userId != null ? userId : "")
-                .header("X-User-Role",  role   != null ? role   : "")
-                .header("X-User-Email", email  != null ? email  : "")
-                .build();
+        // Copia todos os headers originais para um novo HttpHeaders mutável e adiciona
+        // as identidades JWT. Isso evita o UnsupportedOperationException causado pelo
+        // ReadOnlyHttpHeaders do Netty quando o JwtFilter corre antes do RouteToRequestUrlFilter.
+        HttpHeaders newHeaders = new HttpHeaders();
+        newHeaders.addAll(exchange.getRequest().getHeaders());
+        newHeaders.set("X-User-Id",    userId != null ? userId : "");
+        newHeaders.set("X-User-Role",  role   != null ? role   : "");
+        newHeaders.set("X-User-Email", email  != null ? email  : "");
+
+        ServerHttpRequest mutatedRequest = new ServerHttpRequestDecorator(exchange.getRequest()) {
+            @Override
+            public HttpHeaders getHeaders() {
+                return newHeaders;
+            }
+        };
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
