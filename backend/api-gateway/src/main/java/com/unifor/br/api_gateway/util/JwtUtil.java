@@ -34,15 +34,26 @@ public class JwtUtil {
                 .getBody();
     }
 
-    public boolean isTokenValid(String token) {
+    /**
+     * Valida o token e retorna os claims em uma única operação de parse.
+     * Retorna Optional.empty() se o token for inválido, expirado ou malformado.
+     */
+    public java.util.Optional<Claims> getValidClaims(String token) {
         try {
             Claims claims = getClaims(token);
-            return !claims.getExpiration().before(new Date());
+            if (claims.getExpiration() == null || claims.getExpiration().before(new Date())) {
+                return java.util.Optional.empty();
+            }
+            return java.util.Optional.of(claims);
         } catch (Exception e) {
-            System.out.println("❌ Erro ao validar token: " + e.getClass().getSimpleName());
-            System.out.println("❌ Mensagem: " + e.getMessage());
-            return false;
+            System.out.println("❌ Token inválido [" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+            return java.util.Optional.empty();
         }
+    }
+
+    /** @deprecated use getValidClaims() para evitar double-parse */
+    public boolean isTokenValid(String token) {
+        return getValidClaims(token).isPresent();
     }
 
     public String extractEmail(String token) {

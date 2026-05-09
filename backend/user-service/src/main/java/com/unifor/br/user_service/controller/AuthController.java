@@ -19,6 +19,7 @@ import com.unifor.br.user_service.dto.LoginRequest;
 import com.unifor.br.user_service.dto.LoginResponse;
 import com.unifor.br.user_service.dto.RegisterRequest;
 import com.unifor.br.user_service.dto.UpdateUserEmailRequest;
+import com.unifor.br.user_service.dto.UserResponse;
 import com.unifor.br.user_service.exception.UnauthorizedException;
 import com.unifor.br.user_service.security.JwtService;
 import com.unifor.br.user_service.service.AuthService;
@@ -49,6 +50,11 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserResponse> buscarUsuarioPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(authService.buscarPorId(id));
     }
 
     @PatchMapping("/users/{id}/email")

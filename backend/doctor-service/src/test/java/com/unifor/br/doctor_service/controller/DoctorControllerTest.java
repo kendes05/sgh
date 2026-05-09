@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unifor.br.doctor_service.config.SecurityConfig;
 import com.unifor.br.doctor_service.dto.DoctorResponse;
+import com.unifor.br.doctor_service.model.Doctor;
 import com.unifor.br.doctor_service.service.DoctorService;
 
 @WebMvcTest(DoctorController.class)
@@ -41,26 +42,27 @@ class DoctorControllerTest {
     @MockBean
     private DoctorService doctorService;
 
-    private DoctorResponse buildResponse(String id) {
+    private DoctorResponse buildResponse(UUID id) {
         DoctorResponse r = new DoctorResponse();
-        r.setId(UUID.fromString(id));
+        r.setId(id);
         r.setNome("Dr. Carlos");
-        r.setCrm_coren("CRM-1234");
-        r.setSexo("Masculino");
+        r.setCrmCoren("CRM-1234");
+        r.setSexo(Doctor.Sexo.MASCULINO);
         r.setEmail("carlos@hospital.com");
         r.setTelefone("85999990000");
         r.setEspecialidadePrincipal("Clínica Geral");
-        r.setRole("medic");
+        r.setRole(Doctor.Role.medic);
+        r.setIsActive(true);
         return r;
     }
 
-    private String doctorRequestBody() throws Exception {
+    private String doctorRequestBody() {
         return """
                 {
                   "nome": "Dr. Carlos",
                   "role": "medic",
-                  "crm_coren": "CRM-1234",
-                  "sexo": "Masculino",
+                  "crmCoren": "CRM-1234",
+                  "sexo": "MASCULINO",
                   "email": "carlos@hospital.com",
                   "telefone": "85999990000",
                   "especialidadePrincipal": "Clínica Geral"
@@ -72,7 +74,7 @@ class DoctorControllerTest {
 
     @Test
     void listDoctors_deveRetornar200_comListaDeProfissionais() throws Exception {
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         when(doctorService.listDoctors()).thenReturn(List.of(buildResponse(id)));
 
         mockMvc.perform(get("/doctor"))
@@ -94,7 +96,7 @@ class DoctorControllerTest {
 
     @Test
     void getDoctorById_deveRetornar200_quandoProfissionalExiste() throws Exception {
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         when(doctorService.getDoctorById(id)).thenReturn(buildResponse(id));
 
         mockMvc.perform(get("/doctor/" + id))
@@ -103,19 +105,20 @@ class DoctorControllerTest {
     }
 
     @Test
-    void getDoctorById_deveRetornar500_quandoProfissionalNaoEncontrado() throws Exception {
-        String id = UUID.randomUUID().toString();
-        when(doctorService.getDoctorById(id)).thenThrow(new RuntimeException("Médico não encontrado"));
+    void getDoctorById_deveRetornar404_quandoProfissionalNaoEncontrado() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(doctorService.getDoctorById(id))
+                .thenThrow(new com.unifor.br.doctor_service.exception.ResourceNotFoundException("Profissional nao encontrado."));
 
         mockMvc.perform(get("/doctor/" + id))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isNotFound());
     }
 
     // GET /doctor/role/{role}
 
     @Test
     void getDoctorsByRole_deveRetornar200_comListaPorRole() throws Exception {
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         when(doctorService.getDoctorsByRole("medic")).thenReturn(List.of(buildResponse(id)));
 
         mockMvc.perform(get("/doctor/role/medic"))
@@ -135,34 +138,34 @@ class DoctorControllerTest {
     // POST /doctor
 
     @Test
-    void registerDoctor_deveRetornar200_quandoDadosValidos() throws Exception {
-        String id = UUID.randomUUID().toString();
+    void registerDoctor_deveRetornar201_quandoDadosValidos() throws Exception {
+        UUID id = UUID.randomUUID();
         when(doctorService.registerDoctor(any())).thenReturn(buildResponse(id));
 
         mockMvc.perform(post("/doctor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(doctorRequestBody()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.nome").value("Dr. Carlos"))
-                .andExpect(jsonPath("$.crm_coren").value("CRM-1234"));
+                .andExpect(jsonPath("$.crmCoren").value("CRM-1234"));
     }
 
     @Test
-    void registerDoctor_deveRetornar500_quandoEmailJaCadastrado() throws Exception {
+    void registerDoctor_deveRetornar409_quandoEmailJaCadastrado() throws Exception {
         when(doctorService.registerDoctor(any()))
-                .thenThrow(new RuntimeException("Já existe um médico com este e-mail"));
+                .thenThrow(new com.unifor.br.doctor_service.exception.ConflictException("Ja existe um profissional com este e-mail."));
 
         mockMvc.perform(post("/doctor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(doctorRequestBody()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isConflict());
     }
 
     // PUT /doctor/{id}
 
     @Test
     void updateDoctor_deveRetornar200_quandoDadosValidos() throws Exception {
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         when(doctorService.updateDoctor(eq(id), any())).thenReturn(buildResponse(id));
 
         mockMvc.perform(put("/doctor/" + id)
@@ -173,22 +176,22 @@ class DoctorControllerTest {
     }
 
     @Test
-    void updateDoctor_deveRetornar500_quandoProfissionalNaoEncontrado() throws Exception {
-        String id = UUID.randomUUID().toString();
+    void updateDoctor_deveRetornar404_quandoProfissionalNaoEncontrado() throws Exception {
+        UUID id = UUID.randomUUID();
         when(doctorService.updateDoctor(eq(id), any()))
-                .thenThrow(new RuntimeException("Médico não encontrado"));
+                .thenThrow(new com.unifor.br.doctor_service.exception.ResourceNotFoundException("Profissional nao encontrado."));
 
         mockMvc.perform(put("/doctor/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(doctorRequestBody()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isNotFound());
     }
 
     // DELETE /doctor/{id}
 
     @Test
     void deleteDoctor_deveRetornar204_quandoProfissionalExiste() throws Exception {
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         doNothing().when(doctorService).deleteDoctor(id);
 
         mockMvc.perform(delete("/doctor/" + id))
@@ -196,12 +199,12 @@ class DoctorControllerTest {
     }
 
     @Test
-    void deleteDoctor_deveRetornar500_quandoProfissionalNaoEncontrado() throws Exception {
-        String id = UUID.randomUUID().toString();
-        doThrow(new RuntimeException("Médico não encontrado"))
+    void deleteDoctor_deveRetornar404_quandoProfissionalNaoEncontrado() throws Exception {
+        UUID id = UUID.randomUUID();
+        doThrow(new com.unifor.br.doctor_service.exception.ResourceNotFoundException("Profissional nao encontrado."))
                 .when(doctorService).deleteDoctor(id);
 
         mockMvc.perform(delete("/doctor/" + id))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isNotFound());
     }
 }

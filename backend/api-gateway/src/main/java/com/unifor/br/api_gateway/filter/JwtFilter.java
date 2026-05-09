@@ -40,15 +40,18 @@ public class JwtFilter implements GlobalFilter, Ordered {
 
         String token = authHeader.substring(7);
 
-        if (!jwtUtil.isTokenValid(token)) {
+        // Valida e extrai claims em um único parse — evita double-parse e NPE na pipeline reativa
+        io.jsonwebtoken.Claims claims = jwtUtil.getValidClaims(token).orElse(null);
+
+        if (claims == null) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        // Extrai claims e propaga como headers para os serviços downstream
-        String userId = jwtUtil.extractUserId(token);
-        String role   = jwtUtil.extractRole(token);
-        String email  = jwtUtil.extractEmail(token);
+        // Propaga identidade como headers para os serviços downstream
+        String userId = claims.get("userId", String.class);
+        String role   = claims.get("role",   String.class);
+        String email  = claims.getSubject();
 
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                 .header("X-User-Id",    userId != null ? userId : "")

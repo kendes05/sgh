@@ -1,7 +1,9 @@
 package com.unifor.br.doctor_service.controller;
 
 import java.util.List;
+import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import com.unifor.br.doctor_service.dto.DoctorRequest;
 import com.unifor.br.doctor_service.dto.DoctorResponse;
 import com.unifor.br.doctor_service.service.DoctorService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -25,42 +28,36 @@ public class DoctorController {
 
     private final DoctorService doctorService;
 
-
-    // GET /doctor — listagem de todos os profissionais de saúde
     @GetMapping
-    public List<DoctorResponse> listDoctors() {
-        return doctorService.listDoctors();
+    public ResponseEntity<List<DoctorResponse>> listDoctors() {
+        return ResponseEntity.ok(doctorService.listDoctors());
     }
 
-    // GET /doctor/{id} — busca por id
     @GetMapping("/{id}")
-    public DoctorResponse getDoctorById(@PathVariable String id) {
-        return doctorService.getDoctorById(id);
+    public ResponseEntity<DoctorResponse> getDoctorById(@PathVariable UUID id) {
+        return ResponseEntity.ok(doctorService.getDoctorById(id));
     }
 
-    // GET /doctor/role/{role} — filtrar pela Role
     @GetMapping("/role/{role}")
-    public List<DoctorResponse> getDoctorsByRole(@PathVariable String role) {
-        return doctorService.getDoctorsByRole(role);
+    public ResponseEntity<List<DoctorResponse>> getDoctorsByRole(@PathVariable String role) {
+        return ResponseEntity.ok(doctorService.getDoctorsByRole(role));
     }
 
-
-    // Post /doctor — cadastro de novo profissional de saúde (médico, enfermeiro)
     @PostMapping
-    public DoctorResponse registerDoctor(@RequestBody DoctorRequest request) {
-        return doctorService.registerDoctor(request);
+    public ResponseEntity<DoctorResponse> registerDoctor(@RequestBody @Valid DoctorRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.registerDoctor(request));
     }
 
-    // Put /doctor/{id}
     @PutMapping("/{id}")
-    public DoctorResponse updateDoctor(@PathVariable String id, @RequestBody DoctorRequest request) {
-        return doctorService.updateDoctor(id, request);
+    public ResponseEntity<DoctorResponse> updateDoctor(
+            @PathVariable UUID id,
+            @RequestBody @Valid DoctorRequest request) {
+        return ResponseEntity.ok(doctorService.updateDoctor(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteDoctor(@PathVariable String id) {
+    public ResponseEntity<Void> deleteDoctor(@PathVariable UUID id) {
         doctorService.deleteDoctor(id);
         return ResponseEntity.noContent().build();
     }
-
 }

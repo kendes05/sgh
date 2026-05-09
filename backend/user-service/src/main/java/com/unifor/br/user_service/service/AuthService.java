@@ -18,6 +18,7 @@ import com.unifor.br.user_service.dto.LoginResponse;
 import com.unifor.br.user_service.dto.RegisterRequest;
 import com.unifor.br.user_service.dto.UpdateUserEmailRequest;
 import com.unifor.br.user_service.dto.UserLoginResponse;
+import com.unifor.br.user_service.dto.UserResponse;
 import com.unifor.br.user_service.exception.BusinessException;
 import com.unifor.br.user_service.exception.ConflictException;
 import com.unifor.br.user_service.exception.ResourceNotFoundException;
@@ -121,6 +122,19 @@ public class AuthService {
         usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
         usuario.setMustChangePassword(false);
         repository.save(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponse buscarPorId(UUID userId) {
+        Usuario usuario = repository.findByIdAndIsActiveTrue(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado ou inativo."));
+        return new UserResponse(
+                usuario.getId(),
+                usuario.getNome(),
+                usuario.getEmail(),
+                usuario.getRole().name(),
+                usuario.getIsActive(),
+                usuario.getMustChangePassword());
     }
 
     private UserLoginResponse toUserLoginResponse(Usuario usuario) {

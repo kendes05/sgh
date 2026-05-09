@@ -1,32 +1,40 @@
 package com.unifor.br.doctor_service.dto;
 
-import jakarta.validation.constraints.*;
+import com.unifor.br.doctor_service.model.Doctor.Role;
+import com.unifor.br.doctor_service.model.Doctor.Sexo;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class DoctorRequest {
 
-    @NotBlank(message = "Nome é obrigatório")
+    @NotBlank(message = "Nome e obrigatorio")
     @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
     private String nome;
 
-    @NotBlank(message = "Role é obrigatório")
-    private String role;
+    @NotNull(message = "Role e obrigatoria")
+    private Role role;
 
-    @NotBlank(message = "CRM é obrigatório")
-    private String crm_coren;
+    @NotBlank(message = "CRM/COREN e obrigatorio")
+    @Size(max = 20, message = "CRM/COREN deve ter no maximo 20 caracteres")
+    private String crmCoren;
 
-    @NotBlank(message = "Sexo é obrigatório")
-    private String sexo;
+    @NotNull(message = "Sexo e obrigatorio")
+    private Sexo sexo;
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
+    @NotBlank(message = "Email e obrigatorio")
+    @Email(message = "Email invalido")
     private String email;
 
-    @NotBlank(message = "Telefone é obrigatório")
-    @Size(max = 11, message = "Telefone deve ter no máximo 11 caracteres")
+    @NotBlank(message = "Telefone e obrigatorio")
+    @Size(max = 20, message = "Telefone deve ter no maximo 20 caracteres")
     private String telefone;
 
-    @NotBlank(message = "Especialidade principal é obrigatória")
+    @NotBlank(message = "Especialidade principal e obrigatoria")
+    @Size(max = 100, message = "Especialidade deve ter no maximo 100 caracteres")
     private String especialidadePrincipal;
 }

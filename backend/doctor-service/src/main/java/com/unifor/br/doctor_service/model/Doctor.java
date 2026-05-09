@@ -1,7 +1,6 @@
 package com.unifor.br.doctor_service.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,8 +28,6 @@ public class Doctor {
     @Column(name = "user_auth_id", unique = true, nullable = false)
     private String userAuthId;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
     @Column(name = "nome", nullable = false, length = 100)
     private String nome;
 
@@ -38,26 +35,24 @@ public class Doctor {
     @Column(nullable = false)
     private Role role;
 
-    @NotBlank(message = "CRM é obrigatório")
     @Column(name = "crm_coren", nullable = false, unique = true, length = 20)
-    private String crm_coren;
+    private String crmCoren;
 
-    @NotBlank(message = "Sexo é obrigatório")
+    @Enumerated(EnumType.STRING)
     @Column(name = "sexo", nullable = false)
-    private String sexo;
+    private Sexo sexo;
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    @NotBlank(message = "Telefone é obrigatório")
-    @Column(name = "telefone", nullable = false, length = 11)
+    @Column(name = "telefone", nullable = false, length = 20)
     private String telefone;
 
-    @NotBlank(message = "Especialidade principal é obrigatória")
     @Column(name = "especialidade_principal", length = 100)
     private String especialidadePrincipal;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -67,8 +62,15 @@ public class Doctor {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // -------------------------------------------------------
+    // Enums de domínio
+    // -------------------------------------------------------
+
     public enum Role {
         medic, nurse
     }
 
+    public enum Sexo {
+        MASCULINO, FEMININO, OUTRO
+    }
 }
