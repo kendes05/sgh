@@ -15,5 +15,6 @@ public record PatientResponse(
     Genero genero,
     TipoSanguineo tipoSanguineo,
     String telefone,
+    String susCardNumber,
     boolean isActive
 ) {}

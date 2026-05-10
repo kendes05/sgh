@@ -32,6 +32,9 @@ public record PatientUpdateRequest(
     TipoSanguineo tipoSanguineo,
 
     @Size(max = 20, message = "Telefone deve ter no maximo 20 caracteres")
-    String telefone
+    String telefone,
+
+    @Size(max = 30, message = "Numero do cartao SUS deve ter no maximo 30 caracteres")
+    String susCardNumber
 
 ) {}

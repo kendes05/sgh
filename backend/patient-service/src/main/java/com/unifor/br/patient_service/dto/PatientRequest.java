@@ -41,6 +41,9 @@ public class PatientRequest {
     @NotNull(message = "Tipo sanguineo e obrigatorio")
     private TipoSanguineo tipoSanguineo;
 
+    @Size(max = 30, message = "Numero do cartao SUS deve ter no maximo 30 caracteres")
+    private String susCardNumber;
+
     @NotNull(message = "Data de nascimento e obrigatoria")
     @Past(message = "Data de nascimento deve estar no passado")
     private LocalDate dataNascimento;

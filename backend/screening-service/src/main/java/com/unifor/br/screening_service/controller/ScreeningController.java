@@ -13,11 +13,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.unifor.br.screening_service.dto.CancelScreeningRequest;
 import com.unifor.br.screening_service.dto.ClassificationSuggestionResponse;
 import com.unifor.br.screening_service.dto.CreateScreeningRequest;
+import com.unifor.br.screening_service.dto.FinishScreeningRequest;
+import com.unifor.br.screening_service.dto.QueueItemResponse;
 import com.unifor.br.screening_service.dto.RouteScreeningRequest;
 import com.unifor.br.screening_service.dto.ScreeningResponse;
+import com.unifor.br.screening_service.dto.StartAttendanceRequest;
 import com.unifor.br.screening_service.dto.ValidateClassificationRequest;
+import com.unifor.br.screening_service.model.DestinationSector;
 import com.unifor.br.screening_service.model.ScreeningStatus;
 import com.unifor.br.screening_service.service.ScreeningService;
 
@@ -75,5 +80,44 @@ public class ScreeningController {
             @PathVariable UUID id,
             @RequestBody @Valid RouteScreeningRequest request) {
         return ResponseEntity.ok(screeningService.route(id, request));
+    }
+
+    @PostMapping("/{id}/attendance/start")
+    public ResponseEntity<ScreeningResponse> startAttendance(
+            @PathVariable UUID id,
+            @RequestBody @Valid StartAttendanceRequest request) {
+        return ResponseEntity.ok(screeningService.startAttendance(id, request));
+    }
+
+    @PostMapping("/{id}/attendance/finish")
+    public ResponseEntity<ScreeningResponse> finishScreening(
+            @PathVariable UUID id,
+            @RequestBody @Valid FinishScreeningRequest request) {
+        return ResponseEntity.ok(screeningService.finishScreening(id, request));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<ScreeningResponse> cancelScreening(
+            @PathVariable UUID id,
+            @RequestBody @Valid CancelScreeningRequest request) {
+        return ResponseEntity.ok(screeningService.cancelScreening(id, request));
+    }
+
+    /**
+     * Retorna a fila de atendimento global, ordenada por prioridade e tempo de espera.
+     * Inclui triagens com status AGUARDANDO_ATENDIMENTO e EM_ATENDIMENTO.
+     */
+    @GetMapping("/queue")
+    public ResponseEntity<List<QueueItemResponse>> getQueue() {
+        return ResponseEntity.ok(screeningService.getQueue(null));
+    }
+
+    /**
+     * Retorna a fila de atendimento filtrada por setor de destino.
+     */
+    @GetMapping("/queue/sector/{sector}")
+    public ResponseEntity<List<QueueItemResponse>> getQueueBySector(
+            @PathVariable DestinationSector sector) {
+        return ResponseEntity.ok(screeningService.getQueue(sector));
     }
 }

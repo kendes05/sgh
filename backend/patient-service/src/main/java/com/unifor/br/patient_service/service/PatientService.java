@@ -53,6 +53,7 @@ public class PatientService {
                     .dataNascimento(request.getDataNascimento())
                     .genero(request.getGenero())
                     .tipoSanguineo(request.getTipoSanguineo())
+                    .susCardNumber(request.getSusCardNumber())
                     .isActive(true)
                     .build();
 
@@ -117,6 +118,9 @@ public class PatientService {
         if (request.tipoSanguineo() != null) {
             patient.setTipoSanguineo(request.tipoSanguineo());
         }
+        if (request.susCardNumber() != null) {
+            patient.setSusCardNumber(request.susCardNumber().isBlank() ? null : request.susCardNumber().trim());
+        }
         if (request.cpf() != null) {
             String normalizedCpf = normalizeCpf(request.cpf());
             if (repository.existsByCpfAndIdNot(normalizedCpf, id)) {
@@ -166,6 +170,7 @@ public class PatientService {
                 patient.getGenero(),
                 patient.getTipoSanguineo(),
                 patient.getTelefone(),
+                patient.getSusCardNumber(),
                 patient.getIsActive());
     }
 

@@ -138,6 +138,21 @@ public class Screening {
     @Column(name = "encaminhada_em")
     private LocalDateTime routedAt;
 
+    @Column(name = "profissional_atendimento_id")
+    private UUID attendingProfessionalId;
+
+    @Column(name = "iniciado_em")
+    private LocalDateTime startedAt;
+
+    @Column(name = "finalizado_em")
+    private LocalDateTime finishedAt;
+
+    @Column(name = "notas_alta", columnDefinition = "TEXT")
+    private String dischargeNotes;
+
+    @Column(name = "motivo_cancelamento", columnDefinition = "TEXT")
+    private String cancellationReason;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

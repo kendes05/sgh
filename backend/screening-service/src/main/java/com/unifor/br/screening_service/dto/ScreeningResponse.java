@@ -40,7 +40,14 @@ public record ScreeningResponse(
         DestinationSector destinationSector,
         String routingNotes,
         LocalDateTime routedAt,
+        UUID attendingProfessionalId,
+        LocalDateTime startedAt,
+        LocalDateTime finishedAt,
+        String dischargeNotes,
+        String cancellationReason,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        /** Tempo total em minutos que o paciente permaneceu (ou permanece) no fluxo assistencial. */
+        long waitingTimeMinutes,
         QueueMetricsResponse queueMetrics) {
 }

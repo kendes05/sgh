@@ -46,6 +46,9 @@ public class Patient {
     @Column(name = "tipo_sanguineo", nullable = false)
     private TipoSanguineo tipoSanguineo;
 
+    @Column(name = "numero_cartao_sus", length = 30)
+    private String susCardNumber;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

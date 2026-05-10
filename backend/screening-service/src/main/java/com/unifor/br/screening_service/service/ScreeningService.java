@@ -10,11 +10,17 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.unifor.br.screening_service.client.PatientClient;
+import com.unifor.br.screening_service.client.PatientSummaryResponse;
+import com.unifor.br.screening_service.dto.CancelScreeningRequest;
 import com.unifor.br.screening_service.dto.ClassificationSuggestionResponse;
 import com.unifor.br.screening_service.dto.CreateScreeningRequest;
+import com.unifor.br.screening_service.dto.FinishScreeningRequest;
+import com.unifor.br.screening_service.dto.QueueItemResponse;
 import com.unifor.br.screening_service.dto.QueueMetricsResponse;
 import com.unifor.br.screening_service.dto.RouteScreeningRequest;
 import com.unifor.br.screening_service.dto.ScreeningResponse;
+import com.unifor.br.screening_service.dto.StartAttendanceRequest;
 import com.unifor.br.screening_service.dto.ValidateClassificationRequest;
 import com.unifor.br.screening_service.exception.BusinessException;
 import com.unifor.br.screening_service.exception.ResourceNotFoundException;
@@ -33,15 +39,41 @@ public class ScreeningService {
     private static final EnumSet<ScreeningStatus> ACTIVE_STATUSES = EnumSet.of(
             ScreeningStatus.AGUARDANDO_CLASSIFICACAO,
             ScreeningStatus.CLASSIFICADA,
-            ScreeningStatus.AGUARDANDO_ATENDIMENTO);
+            ScreeningStatus.AGUARDANDO_ATENDIMENTO,
+            ScreeningStatus.EM_ATENDIMENTO);
+
+    private static final EnumSet<ScreeningStatus> TERMINAL_STATUSES = EnumSet.of(
+            ScreeningStatus.FINALIZADA,
+            ScreeningStatus.CANCELADA,
+            ScreeningStatus.AUSENTE);
+
+    /** Status visíveis na fila de atendimento (dashboard operacional). */
+    private static final EnumSet<ScreeningStatus> QUEUE_STATUSES = EnumSet.of(
+            ScreeningStatus.AGUARDANDO_ATENDIMENTO,
+            ScreeningStatus.EM_ATENDIMENTO);
 
     private final ScreeningRepository repository;
     private final ClassificationEngine classificationEngine;
     private final RoutingEngine routingEngine;
     private final ScreeningEventPublisher eventPublisher;
+    private final PatientClient patientClient;
 
     @Transactional
     public ScreeningResponse create(CreateScreeningRequest request) {
+        // Valida existência e status do paciente no patient-service antes de abrir triagem
+        PatientSummaryResponse patient;
+        try {
+            patient = patientClient.findById(request.patientId());
+        } catch (feign.FeignException.NotFound ex) {
+            throw new ResourceNotFoundException("Paciente nao encontrado no sistema.");
+        } catch (feign.FeignException ex) {
+            throw new BusinessException("Erro ao consultar o patient-service: " + ex.status());
+        }
+
+        if (!patient.isActive()) {
+            throw new BusinessException("Paciente esta inativo e nao pode ser triado.");
+        }
+
         validateNoActiveScreening(request.patientId());
 
         Screening screening = Screening.builder()
@@ -129,6 +161,52 @@ public class ScreeningService {
         return toResponse(saved);
     }
 
+    @Transactional
+    public ScreeningResponse startAttendance(UUID screeningId, StartAttendanceRequest request) {
+        Screening screening = getEntity(screeningId);
+        if (screening.getStatus() != ScreeningStatus.AGUARDANDO_ATENDIMENTO) {
+            throw new BusinessException("Triagem precisa estar aguardando atendimento para iniciar o atendimento.");
+        }
+
+        screening.setAttendingProfessionalId(request.professionalId());
+        screening.setStartedAt(LocalDateTime.now());
+        screening.setStatus(ScreeningStatus.EM_ATENDIMENTO);
+
+        Screening saved = repository.save(screening);
+        eventPublisher.publishAttendanceStarted(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public ScreeningResponse finishScreening(UUID screeningId, FinishScreeningRequest request) {
+        Screening screening = getEntity(screeningId);
+        if (screening.getStatus() != ScreeningStatus.EM_ATENDIMENTO) {
+            throw new BusinessException("Triagem precisa estar em atendimento para ser finalizada.");
+        }
+
+        screening.setDischargeNotes(blankToNull(request.dischargeNotes()));
+        screening.setFinishedAt(LocalDateTime.now());
+        screening.setStatus(ScreeningStatus.FINALIZADA);
+
+        Screening saved = repository.save(screening);
+        eventPublisher.publishFinished(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public ScreeningResponse cancelScreening(UUID screeningId, CancelScreeningRequest request) {
+        Screening screening = getEntity(screeningId);
+        if (TERMINAL_STATUSES.contains(screening.getStatus())) {
+            throw new BusinessException("Triagem ja esta em estado terminal e nao pode ser cancelada.");
+        }
+
+        screening.setCancellationReason(request.reason());
+        screening.setFinishedAt(LocalDateTime.now());
+        screening.setStatus(request.absent() ? ScreeningStatus.AUSENTE : ScreeningStatus.CANCELADA);
+
+        return toResponse(repository.save(screening));
+    }
+
     @Transactional(readOnly = true)
     public ScreeningResponse findById(UUID screeningId) {
         return toResponse(getEntity(screeningId));
@@ -156,6 +234,61 @@ public class ScreeningService {
         return toResponse(screening);
     }
 
+    /**
+     * Retorna a fila de atendimento ordenada por prioridade + tempo de espera.
+     * Inclui triagens com status AGUARDANDO_ATENDIMENTO e EM_ATENDIMENTO.
+     *
+     * @param sector filtra pelo setor de destino; null retorna todos os setores.
+     */
+    @Transactional(readOnly = true)
+    public List<QueueItemResponse> getQueue(DestinationSector sector) {
+        List<Screening> raw = sector != null
+                ? repository.findByDestinationSectorAndStatusIn(sector, QUEUE_STATUSES)
+                : repository.findByStatusIn(QUEUE_STATUSES);
+
+        // Descarta entradas sem prioridade final (dados inconsistentes)
+        List<Screening> eligible = raw.stream()
+                .filter(s -> s.getFinalPriority() != null && s.getClassifiedAt() != null)
+                .toList();
+
+        // Ordena: prioridade DESC (score maior = mais urgente), depois classifiedAt ASC
+        List<Screening> sorted = eligible.stream()
+                .sorted((a, b) -> {
+                    int cmp = Integer.compare(
+                            b.getFinalPriority().getScore(),
+                            a.getFinalPriority().getScore());
+                    if (cmp != 0) return cmp;
+                    return a.getClassifiedAt().compareTo(b.getClassifiedAt());
+                })
+                .toList();
+
+        LocalDateTime now = LocalDateTime.now();
+        List<QueueItemResponse> result = new ArrayList<>();
+
+        for (int i = 0; i < sorted.size(); i++) {
+            Screening s = sorted.get(i);
+            long elapsed   = Duration.between(s.getClassifiedAt(), now).toMinutes();
+            long remaining = Math.max(0, s.getFinalPriority().getMaxWaitMinutes() - elapsed);
+
+            result.add(new QueueItemResponse(
+                    s.getId(),
+                    s.getPatientId(),
+                    s.getPatientName(),
+                    s.getFinalPriority(),
+                    s.getFinalPriority().getScore(),
+                    s.getFinalPriority().getMaxWaitMinutes(),
+                    s.getDestinationSector(),
+                    s.getStatus(),
+                    elapsed,
+                    remaining,
+                    i + 1,                  // posição 1-based
+                    s.getClassifiedAt(),
+                    s.getStartedAt()));
+        }
+
+        return result;
+    }
+
     private void validateNoActiveScreening(UUID patientId) {
         if (repository.existsByPatientIdAndStatusIn(patientId, ACTIVE_STATUSES)) {
             throw new BusinessException("Paciente ja possui triagem ativa.");
@@ -168,6 +301,12 @@ public class ScreeningService {
     }
 
     private ScreeningResponse toResponse(Screening screening) {
+        // Tempo total no fluxo: para estados terminais usa finishedAt, senão usa agora
+        LocalDateTime endReference = TERMINAL_STATUSES.contains(screening.getStatus()) && screening.getFinishedAt() != null
+                ? screening.getFinishedAt()
+                : LocalDateTime.now();
+        long waitingTimeMinutes = Duration.between(screening.getCreatedAt(), endReference).toMinutes();
+
         return new ScreeningResponse(
                 screening.getId(),
                 screening.getPatientId(),
@@ -197,13 +336,20 @@ public class ScreeningService {
                 screening.getDestinationSector(),
                 screening.getRoutingNotes(),
                 screening.getRoutedAt(),
+                screening.getAttendingProfessionalId(),
+                screening.getStartedAt(),
+                screening.getFinishedAt(),
+                screening.getDischargeNotes(),
+                screening.getCancellationReason(),
                 screening.getCreatedAt(),
                 screening.getUpdatedAt(),
+                waitingTimeMinutes,
                 buildQueueMetrics(screening));
     }
 
     private QueueMetricsResponse buildQueueMetrics(Screening screening) {
-        if (screening.getStatus() != ScreeningStatus.AGUARDANDO_ATENDIMENTO
+        if ((screening.getStatus() != ScreeningStatus.AGUARDANDO_ATENDIMENTO
+                && screening.getStatus() != ScreeningStatus.EM_ATENDIMENTO)
                 || screening.getDestinationSector() == null
                 || screening.getClassifiedAt() == null
                 || screening.getFinalPriority() == null) {

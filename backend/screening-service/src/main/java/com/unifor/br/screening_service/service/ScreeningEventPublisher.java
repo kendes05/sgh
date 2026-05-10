@@ -18,16 +18,22 @@ public class ScreeningEventPublisher {
     private final String createdTopic;
     private final String classifiedTopic;
     private final String criticalTopic;
+    private final String attendanceTopic;
+    private final String finishedTopic;
 
     public ScreeningEventPublisher(
             KafkaTemplate<String, Object> kafkaTemplate,
             @Value("${app.kafka.topics.screening-created:triagem.criada}") String createdTopic,
             @Value("${app.kafka.topics.screening-classified:triagem.classificada}") String classifiedTopic,
-            @Value("${app.kafka.topics.screening-critical:triagem.critica}") String criticalTopic) {
+            @Value("${app.kafka.topics.screening-critical:triagem.critica}") String criticalTopic,
+            @Value("${app.kafka.topics.screening-attendance:triagem.em_atendimento}") String attendanceTopic,
+            @Value("${app.kafka.topics.screening-finished:triagem.finalizada}") String finishedTopic) {
         this.kafkaTemplate = kafkaTemplate;
         this.createdTopic = createdTopic;
         this.classifiedTopic = classifiedTopic;
         this.criticalTopic = criticalTopic;
+        this.attendanceTopic = attendanceTopic;
+        this.finishedTopic = finishedTopic;
     }
 
     public void publishCreated(Screening screening) {
@@ -55,6 +61,31 @@ public class ScreeningEventPublisher {
                 "setorDestino", screening.getDestinationSector(),
                 "tempoMaximoEspera", screening.getFinalPriority().getMaxWaitMinutes()));
         kafkaTemplate.send(classifiedTopic, screening.getId().toString(), payload);
+    }
+
+    public void publishAttendanceStarted(Screening screening) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("evento", "triagem.em_atendimento");
+        payload.put("timestamp", OffsetDateTime.now(ZoneOffset.UTC).toString());
+        payload.put("dados", Map.of(
+                "idTriagem", screening.getId(),
+                "idPaciente", screening.getPatientId(),
+                "idProfissionalAtendimento", screening.getAttendingProfessionalId(),
+                "setorDestino", screening.getDestinationSector()));
+        kafkaTemplate.send(attendanceTopic, screening.getId().toString(), payload);
+    }
+
+    public void publishFinished(Screening screening) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("evento", "triagem.finalizada");
+        payload.put("timestamp", OffsetDateTime.now(ZoneOffset.UTC).toString());
+        payload.put("dados", Map.of(
+                "idTriagem", screening.getId(),
+                "idPaciente", screening.getPatientId(),
+                "prioridade", screening.getFinalPriority(),
+                "setorDestino", screening.getDestinationSector(),
+                "finalizadaEm", screening.getFinishedAt().toString()));
+        kafkaTemplate.send(finishedTopic, screening.getId().toString(), payload);
     }
 
     public void publishCritical(Screening screening) {
