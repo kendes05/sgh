@@ -25,6 +25,7 @@ import com.unifor.br.medical_records_service.service.MedicalRecordService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/medical-records")
@@ -49,6 +50,7 @@ public class MedicalRecordController {
     }
 
     @PostMapping("/{id}/appointments")
+    @PreAuthorize("hasRole('MEDIC')")
     public ResponseEntity<AppointmentResponse> addAppointment(
             @PathVariable String id,
             @RequestBody @Valid CreateAppointmentRequest request) {

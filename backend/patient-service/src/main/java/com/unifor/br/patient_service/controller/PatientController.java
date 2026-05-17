@@ -21,6 +21,7 @@ import com.unifor.br.patient_service.service.PatientService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/patients")
@@ -60,6 +61,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deletar(@PathVariable UUID id) {
         patientService.deletar(id);
         return ResponseEntity.noContent().build();

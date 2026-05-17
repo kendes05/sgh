@@ -32,7 +32,10 @@ public class PatientRequest {
     private String cpf;
 
     @NotBlank(message = "Telefone e obrigatorio")
-    @Size(max = 20, message = "Telefone deve ter no maximo 20 caracteres")
+    @Pattern(
+        regexp = "^\\(?\\d{2}\\)?[\\s-]?\\d{4,5}[\\s-]?\\d{4}$",
+        message = "Telefone invalido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
+    )
     private String telefone;
 
     @NotNull(message = "Genero e obrigatorio")

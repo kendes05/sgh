@@ -29,6 +29,7 @@ import com.unifor.br.screening_service.service.ScreeningService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/screenings")
@@ -70,6 +71,7 @@ public class ScreeningController {
     }
 
     @PostMapping("/{id}/classification")
+    @PreAuthorize("hasAnyRole('MEDIC', 'NURSE')")
     public ResponseEntity<ScreeningResponse> validateClassification(
             @PathVariable UUID id,
             @RequestBody @Valid ValidateClassificationRequest request) {

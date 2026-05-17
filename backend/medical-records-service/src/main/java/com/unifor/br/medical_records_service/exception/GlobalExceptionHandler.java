@@ -7,6 +7,7 @@ import java.util.Map;
 import feign.FeignException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -47,6 +48,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<Map<String, Object>> handleFeign(FeignException ex) {
         return buildResponse(HttpStatus.BAD_GATEWAY, "Falha ao consultar servico dependente.");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Acesso negado: voce nao tem permissao para realizar esta operacao.");
     }
 
     @ExceptionHandler(Exception.class)

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +32,11 @@ public class GlobalExceptionHandler {
                 .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
         body.put("fieldErrors", fieldErrors);
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Acesso negado: voce nao tem permissao para realizar esta operacao.");
     }
 
     @ExceptionHandler(Exception.class)

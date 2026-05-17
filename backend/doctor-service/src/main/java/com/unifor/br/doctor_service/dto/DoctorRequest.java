@@ -6,6 +6,7 @@ import com.unifor.br.doctor_service.model.Doctor.Sexo;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -31,7 +32,10 @@ public class DoctorRequest {
     private String email;
 
     @NotBlank(message = "Telefone e obrigatorio")
-    @Size(max = 20, message = "Telefone deve ter no maximo 20 caracteres")
+    @Pattern(
+        regexp = "^\\(?\\d{2}\\)?[\\s-]?\\d{4,5}[\\s-]?\\d{4}$",
+        message = "Telefone invalido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
+    )
     private String telefone;
 
     @NotBlank(message = "Especialidade principal e obrigatoria")

@@ -20,6 +20,7 @@ import com.unifor.br.doctor_service.service.DoctorService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/doctor")
@@ -44,6 +45,7 @@ public class DoctorController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DoctorResponse> registerDoctor(@RequestBody @Valid DoctorRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.registerDoctor(request));
     }
