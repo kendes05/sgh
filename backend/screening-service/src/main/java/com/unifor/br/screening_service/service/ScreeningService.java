@@ -2,10 +2,14 @@ package com.unifor.br.screening_service.service;
 
 import java.util.ArrayList;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +24,7 @@ import com.unifor.br.screening_service.dto.QueueItemResponse;
 import com.unifor.br.screening_service.dto.QueueMetricsResponse;
 import com.unifor.br.screening_service.dto.RouteScreeningRequest;
 import com.unifor.br.screening_service.dto.ScreeningResponse;
+import com.unifor.br.screening_service.dto.ScreeningStatsResponse;
 import com.unifor.br.screening_service.dto.StartAttendanceRequest;
 import com.unifor.br.screening_service.dto.ValidateClassificationRequest;
 import com.unifor.br.screening_service.exception.BusinessException;
@@ -95,7 +100,7 @@ public class ScreeningService {
                 .protocol("Manchester Adaptado")
                 .build();
 
-        Screening saved = repository.save(screening);
+        Screening saved = repository.saveAndFlush(screening);
         eventPublisher.publishCreated(saved);
         return toResponse(saved);
     }
@@ -305,7 +310,8 @@ public class ScreeningService {
         LocalDateTime endReference = TERMINAL_STATUSES.contains(screening.getStatus()) && screening.getFinishedAt() != null
                 ? screening.getFinishedAt()
                 : LocalDateTime.now();
-        long waitingTimeMinutes = Duration.between(screening.getCreatedAt(), endReference).toMinutes();
+        LocalDateTime createdAtRef = screening.getCreatedAt() != null ? screening.getCreatedAt() : endReference;
+        long waitingTimeMinutes = Duration.between(createdAtRef, endReference).toMinutes();
 
         return new ScreeningResponse(
                 screening.getId(),
@@ -385,6 +391,60 @@ public class ScreeningService {
         long elapsed = Duration.between(screening.getClassifiedAt(), LocalDateTime.now()).toMinutes();
         long remaining = Math.max(0, screening.getFinalPriority().getMaxWaitMinutes() - elapsed);
         return new QueueMetricsResponse(elapsed, remaining, position);
+    }
+
+    @Transactional(readOnly = true)
+    public ScreeningStatsResponse getStats() {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay   = startOfDay.plusDays(1);
+
+        List<Screening> hoje = repository.findByCreatedAtBetween(startOfDay, endOfDay);
+
+        // Contagem por status
+        Map<String, Long> porStatus = new LinkedHashMap<>();
+        for (ScreeningStatus s : ScreeningStatus.values()) {
+            porStatus.put(s.name(), 0L);
+        }
+        hoje.stream()
+                .collect(Collectors.groupingBy(sc -> sc.getStatus().name(), Collectors.counting()))
+                .forEach(porStatus::put);
+
+        // Contagem por prioridade (considera finalPriority; cai para suggestedPriority se não classificado)
+        Map<String, Long> porPrioridade = new LinkedHashMap<>();
+        for (PriorityLevel p : PriorityLevel.values()) {
+            porPrioridade.put(p.name(), 0L);
+        }
+        hoje.stream()
+                .filter(sc -> sc.getFinalPriority() != null || sc.getSuggestedPriority() != null)
+                .collect(Collectors.groupingBy(
+                        sc -> (sc.getFinalPriority() != null ? sc.getFinalPriority() : sc.getSuggestedPriority()).name(),
+                        Collectors.counting()))
+                .forEach(porPrioridade::put);
+
+        // Contagem por setor de destino
+        Map<String, Long> porSetor = new LinkedHashMap<>();
+        for (DestinationSector d : DestinationSector.values()) {
+            porSetor.put(d.name(), 0L);
+        }
+        hoje.stream()
+                .filter(sc -> sc.getDestinationSector() != null)
+                .collect(Collectors.groupingBy(sc -> sc.getDestinationSector().name(), Collectors.counting()))
+                .forEach(porSetor::put);
+
+        // Tempo médio de espera em minutos
+        LocalDateTime now = LocalDateTime.now();
+        double tempoMedio = hoje.stream()
+                .mapToLong(sc -> {
+                    LocalDateTime ref = TERMINAL_STATUSES.contains(sc.getStatus()) && sc.getFinishedAt() != null
+                            ? sc.getFinishedAt()
+                            : now;
+                    LocalDateTime base = sc.getCreatedAt() != null ? sc.getCreatedAt() : ref;
+                    return Duration.between(base, ref).toMinutes();
+                })
+                .average()
+                .orElse(0.0);
+
+        return new ScreeningStatsResponse(hoje.size(), porStatus, porPrioridade, tempoMedio, porSetor);
     }
 
     private <T> List<T> defaultList(List<T> value) {

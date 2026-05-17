@@ -20,6 +20,7 @@ import com.unifor.br.screening_service.dto.FinishScreeningRequest;
 import com.unifor.br.screening_service.dto.QueueItemResponse;
 import com.unifor.br.screening_service.dto.RouteScreeningRequest;
 import com.unifor.br.screening_service.dto.ScreeningResponse;
+import com.unifor.br.screening_service.dto.ScreeningStatsResponse;
 import com.unifor.br.screening_service.dto.StartAttendanceRequest;
 import com.unifor.br.screening_service.dto.ValidateClassificationRequest;
 import com.unifor.br.screening_service.model.DestinationSector;
@@ -101,6 +102,14 @@ public class ScreeningController {
             @PathVariable UUID id,
             @RequestBody @Valid CancelScreeningRequest request) {
         return ResponseEntity.ok(screeningService.cancelScreening(id, request));
+    }
+
+    /**
+     * Retorna estatísticas do dia: total, distribuição por status, prioridade, setor e tempo médio de espera.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<ScreeningStatsResponse> getStats() {
+        return ResponseEntity.ok(screeningService.getStats());
     }
 
     /**

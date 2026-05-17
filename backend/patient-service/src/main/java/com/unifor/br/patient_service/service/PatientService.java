@@ -1,5 +1,7 @@
 package com.unifor.br.patient_service.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +14,7 @@ import com.unifor.br.patient_service.client.AuthResponse;
 import com.unifor.br.patient_service.client.UpdateUserEmailRequest;
 import com.unifor.br.patient_service.dto.PatientRequest;
 import com.unifor.br.patient_service.dto.PatientResponse;
+import com.unifor.br.patient_service.dto.PatientStatsResponse;
 import com.unifor.br.patient_service.dto.PatientUpdateRequest;
 import com.unifor.br.patient_service.exception.ConflictException;
 import com.unifor.br.patient_service.exception.ResourceNotFoundException;
@@ -149,6 +152,17 @@ public class PatientService {
         patient.setIsActive(false);
         repository.saveAndFlush(patient);
         authClient.deactivateAccount(UUID.fromString(patient.getUserAuthId()));
+    }
+
+    @Transactional(readOnly = true)
+    public PatientStatsResponse getStats() {
+        long totalAtivos = repository.countByIsActiveTrue();
+
+        LocalDateTime inicioMes = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime fimMes    = inicioMes.plusMonths(1);
+        long cadastrosNoMes = repository.countByCreatedAtBetween(inicioMes, fimMes);
+
+        return new PatientStatsResponse(totalAtivos, cadastrosNoMes);
     }
 
     // -------------------------------------------------------

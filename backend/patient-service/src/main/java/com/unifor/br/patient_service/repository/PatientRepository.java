@@ -1,5 +1,6 @@
 package com.unifor.br.patient_service.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +27,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
     // --- Geral ---
     List<Patient> findAllByIsActiveTrue();
     Optional<Patient> findByIdAndIsActiveTrue(UUID id);
+
+    // --- Stats ---
+    long countByIsActiveTrue();
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

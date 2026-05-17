@@ -1,5 +1,6 @@
 package com.unifor.br.screening_service.repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -26,4 +27,6 @@ public interface ScreeningRepository extends JpaRepository<Screening, UUID> {
     List<Screening> findByStatusIn(Collection<ScreeningStatus> statuses);
 
     List<Screening> findByDestinationSectorAndStatusIn(DestinationSector sector, Collection<ScreeningStatus> statuses);
+
+    List<Screening> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

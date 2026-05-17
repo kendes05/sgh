@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.unifor.br.patient_service.dto.PatientRequest;
+import com.unifor.br.patient_service.dto.PatientStatsResponse;
 import com.unifor.br.patient_service.dto.PatientUpdateRequest;
 import com.unifor.br.patient_service.service.PatientService;
 
@@ -62,5 +63,13 @@ public class PatientController {
     public ResponseEntity<?> deletar(@PathVariable UUID id) {
         patientService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Retorna estatísticas de pacientes: total ativos e cadastros no mês corrente.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<PatientStatsResponse> getStats() {
+        return ResponseEntity.ok(patientService.getStats());
     }
 }
