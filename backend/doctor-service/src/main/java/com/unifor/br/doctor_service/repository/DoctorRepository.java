@@ -25,4 +25,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
     // --- CRM/COREN ---
     boolean existsByCrmCoren(String crmCoren);
     boolean existsByCrmCorenAndIdNot(String crmCoren, UUID id);
+
+    // --- Auth ---
+    Optional<Doctor> findByUserAuthIdAndIsActiveTrue(String userAuthId);
 }

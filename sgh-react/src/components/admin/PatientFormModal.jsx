@@ -5,8 +5,10 @@ const emptyForm = {
   id: '',
   nome: '',
   email: '',
+  cpf: '',
   telefone: '',
   genero: '',
+  tipoSanguineo: '',
   dataNascimento: '',
 };
 
@@ -19,8 +21,10 @@ const PatientFormModal = ({ isOpen, patient, isSaving, error, onClose, onSubmit 
         id: patient.id ?? '',
         nome: patient.nome ?? '',
         email: patient.email ?? '',
+        cpf: patient.cpf ?? '',
         telefone: patient.telefone ?? '',
         genero: patient.genero ?? '',
+        tipoSanguineo: patient.tipoSanguineo ?? '',
         dataNascimento: patient.dataNascimento?.slice?.(0, 10) ?? '',
       });
       return;
@@ -82,6 +86,20 @@ const PatientFormModal = ({ isOpen, patient, isSaving, error, onClose, onSubmit 
             />
           </div>
 
+          <div className="form-group">
+            <label htmlFor="patientCpf">CPF</label>
+            <input
+              id="patientCpf"
+              name="cpf"
+              type="text"
+              value={formData.cpf}
+              onChange={handleChange}
+              placeholder="000.000.000-00"
+              disabled={isEditMode}
+              required={!isEditMode}
+            />
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="patientPhone">Telefone</label>
@@ -99,23 +117,41 @@ const PatientFormModal = ({ isOpen, patient, isSaving, error, onClose, onSubmit 
               <label htmlFor="patientGender">Gênero</label>
               <select id="patientGender" name="genero" value={formData.genero} onChange={handleChange} required>
                 <option value="">Selecione</option>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-                <option value="O">Outro</option>
+                <option value="MASCULINO">Masculino</option>
+                <option value="FEMININO">Feminino</option>
+                <option value="OUTRO">Outro</option>
               </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="patientBirthDate">Data de Nascimento</label>
-            <input
-              id="patientBirthDate"
-              name="dataNascimento"
-              type="date"
-              value={formData.dataNascimento}
-              onChange={handleChange}
-              required
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="patientBirthDate">Data de Nascimento</label>
+              <input
+                id="patientBirthDate"
+                name="dataNascimento"
+                type="date"
+                value={formData.dataNascimento}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="patientBloodType">Tipo Sanguíneo</label>
+              <select id="patientBloodType" name="tipoSanguineo" value={formData.tipoSanguineo} onChange={handleChange} required>
+                <option value="">Selecione</option>
+                <option value="A_POS">A+</option>
+                <option value="A_NEG">A-</option>
+                <option value="B_POS">B+</option>
+                <option value="B_NEG">B-</option>
+                <option value="AB_POS">AB+</option>
+                <option value="AB_NEG">AB-</option>
+                <option value="O_POS">O+</option>
+                <option value="O_NEG">O-</option>
+                <option value="DESCONHECIDO">Desconhecido</option>
+              </select>
+            </div>
           </div>
 
           <button type="submit" className="btn" disabled={isSaving}>

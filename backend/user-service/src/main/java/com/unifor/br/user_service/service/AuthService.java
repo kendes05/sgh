@@ -2,6 +2,7 @@ package com.unifor.br.user_service.service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -122,6 +123,33 @@ public class AuthService {
         usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
         usuario.setMustChangePassword(false);
         repository.save(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> listarTodos() {
+        return repository.findAll().stream()
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                .map(u -> new UserResponse(
+                        u.getId(),
+                        u.getNome(),
+                        u.getEmail(),
+                        u.getRole().name(),
+                        u.getIsActive(),
+                        u.getMustChangePassword()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponse buscarPorEmail(String email) {
+        Usuario usuario = repository.findByEmailAndIsActiveTrue(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado ou inativo."));
+        return new UserResponse(
+                usuario.getId(),
+                usuario.getNome(),
+                usuario.getEmail(),
+                usuario.getRole().name(),
+                usuario.getIsActive(),
+                usuario.getMustChangePassword());
     }
 
     @Transactional(readOnly = true)

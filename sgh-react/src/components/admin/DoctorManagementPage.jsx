@@ -84,7 +84,7 @@ const DoctorManagementPage = () => {
       const payload = {
         nome: formData.nome,
         role: formData.role,
-        crm_coren: formData.crm_coren,
+        crmCoren: formData.crmCoren,
         sexo: formData.sexo,
         email: formData.email,
         telefone: formData.telefone,

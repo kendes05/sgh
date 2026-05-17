@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(FeignException.NotFound.class)
     public ResponseEntity<Map<String, Object>> handleFeignNotFound(FeignException.NotFound ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, "Recurso relacionado nao encontrado em outro servico.");
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Recurso relacionado nao encontrado em outro servico.");
     }
 
     @ExceptionHandler(FeignException.class)

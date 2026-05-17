@@ -8,9 +8,9 @@ export const formatBirthDate = (value) => {
 
 export const formatGender = (value) => {
   const labels = {
-    M: 'Masculino',
-    F: 'Feminino',
-    O: 'Outro',
+    MASCULINO: 'Masculino',
+    FEMININO: 'Feminino',
+    OUTRO: 'Outro',
   };
 
   return labels[value] ?? value ?? '--';

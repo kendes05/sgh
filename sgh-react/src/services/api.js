@@ -94,9 +94,9 @@ export const updatePatient = async (id, patientData) => {
   }
 };
 
-export const deletePatient = async (email) => {
+export const deletePatient = async (id) => {
   try {
-    await api.delete(`/patient/${email}`);
+    await api.delete(`/patients/${id}`);
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao desativar paciente');
   }
@@ -104,7 +104,7 @@ export const deletePatient = async (email) => {
 
 export const getPatientByEmail = async (email) => {
   try {
-    const response = await api.get(`/patient/${email}`);
+    const response = await api.get('/patients', { params: { email } });
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Erro ao carregar dados do paciente');
@@ -239,6 +239,33 @@ export const routeScreening = async (id, payload) => {
     return response.data;
   } catch (error) {
     throw new Error(getApiErrorMessage(error, 'Erro ao encaminhar triagem'));
+  }
+};
+
+export const startScreeningAttendance = async (id, payload) => {
+  try {
+    const response = await api.post(`/screenings/${id}/attendance/start`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao iniciar atendimento da triagem'));
+  }
+};
+
+export const finishScreeningAttendance = async (id, payload) => {
+  try {
+    const response = await api.post(`/screenings/${id}/attendance/finish`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao finalizar atendimento da triagem'));
+  }
+};
+
+export const cancelScreening = async (id, payload) => {
+  try {
+    const response = await api.post(`/screenings/${id}/cancel`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Erro ao cancelar triagem'));
   }
 };
 

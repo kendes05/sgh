@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.unifor.br.doctor_service.dto.DoctorRequest;
@@ -32,6 +33,11 @@ public class DoctorController {
     @GetMapping
     public ResponseEntity<List<DoctorResponse>> listDoctors() {
         return ResponseEntity.ok(doctorService.listDoctors());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<DoctorResponse> getMe(@RequestHeader("X-User-Id") String userId) {
+        return ResponseEntity.ok(doctorService.getDoctorByUserAuthId(userId));
     }
 
     @GetMapping("/{id}")

@@ -5,7 +5,7 @@ const emptyForm = {
   id: '',
   nome: '',
   role: '',
-  crm_coren: '',
+  crmCoren: '',
   sexo: '',
   email: '',
   telefone: '',
@@ -21,7 +21,7 @@ const DoctorFormModal = ({ isOpen, doctor, isSaving, error, onClose, onSubmit })
         id: doctor.id ?? '',
         nome: doctor.nome ?? '',
         role: doctor.role ?? '',
-        crm_coren: doctor.crm_coren ?? '',
+        crmCoren: doctor.crmCoren ?? '',
         sexo: doctor.sexo ?? '',
         email: doctor.email ?? '',
         telefone: doctor.telefone ?? '',
@@ -87,9 +87,9 @@ const DoctorFormModal = ({ isOpen, doctor, isSaving, error, onClose, onSubmit })
               <label htmlFor="doctorRegistry">CRM/COREN</label>
               <input
                 id="doctorRegistry"
-                name="crm_coren"
+                name="crmCoren"
                 type="text"
-                value={formData.crm_coren}
+                value={formData.crmCoren}
                 onChange={handleChange}
                 required
               />
@@ -128,9 +128,9 @@ const DoctorFormModal = ({ isOpen, doctor, isSaving, error, onClose, onSubmit })
               <label htmlFor="doctorSex">Sexo</label>
               <select id="doctorSex" name="sexo" value={formData.sexo} onChange={handleChange} required>
                 <option value="">Selecione</option>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-                <option value="O">Outro</option>
+                <option value="MASCULINO">Masculino</option>
+                <option value="FEMININO">Feminino</option>
+                <option value="OUTRO">Outro</option>
               </select>
             </div>
 

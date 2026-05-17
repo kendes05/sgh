@@ -65,10 +65,22 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Email atualizado com sucesso."));
     }
 
+    @GetMapping("/users")
+    public ResponseEntity<?> listarUsuarios() {
+        return ResponseEntity.ok(authService.listarTodos());
+    }
+
+    @GetMapping("/users/me")
+    public ResponseEntity<?> me(HttpServletRequest request) {
+        String token = extractBearerToken(request);
+        String email = jwtService.extrairEmail(token);
+        return ResponseEntity.ok(authService.buscarPorEmail(email));
+    }
+
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deactivateAccount(@PathVariable UUID id) {
         authService.deactivateAccount(id);
-        return ResponseEntity.ok(Map.of("message", "Conta inativada com sucesso."));
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/change-password")

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  cancelScreening,
   createScreening,
+  finishScreeningAttendance,
   getAllPatients,
   getAllScreenings,
   getScreeningById,
   routeScreening,
+  startScreeningAttendance,
   suggestScreeningClassification,
   validateScreeningClassification,
 } from '../../services/api';
@@ -20,6 +23,10 @@ const STATUS_OPTIONS = [
   { value: 'AGUARDANDO_CLASSIFICACAO', label: 'Aguardando classificacao' },
   { value: 'CLASSIFICADA', label: 'Classificada' },
   { value: 'AGUARDANDO_ATENDIMENTO', label: 'Aguardando atendimento' },
+  { value: 'EM_ATENDIMENTO', label: 'Em atendimento' },
+  { value: 'FINALIZADA', label: 'Finalizada' },
+  { value: 'CANCELADA', label: 'Cancelada' },
+  { value: 'AUSENTE', label: 'Ausente' },
 ];
 
 const PRIORITY_OPTIONS = [
@@ -76,6 +83,10 @@ const STATUS_META = {
   AGUARDANDO_CLASSIFICACAO: { label: 'Aguardando classificacao', className: 'warning' },
   CLASSIFICADA: { label: 'Classificada', className: 'active' },
   AGUARDANDO_ATENDIMENTO: { label: 'Aguardando atendimento', className: 'info' },
+  EM_ATENDIMENTO: { label: 'Em atendimento', className: 'success' },
+  FINALIZADA: { label: 'Finalizada', className: 'muted' },
+  CANCELADA: { label: 'Cancelada', className: 'error' },
+  AUSENTE: { label: 'Ausente', className: 'error' },
 };
 
 const INITIAL_FORM = {
@@ -473,6 +484,15 @@ const ScreeningManagementPage = () => {
     destinationSector: '',
     routingNotes: '',
   });
+  const [attendanceForm, setAttendanceForm] = useState({
+    professionalId: currentUser?.id ?? '',
+    notes: '',
+  });
+  const [cancelForm, setCancelForm] = useState({
+    professionalId: currentUser?.id ?? '',
+    reason: '',
+    absent: false,
+  });
 
   const loadScreenings = async (statusFilter = filters.status, preferredId = selectedScreeningId) => {
     try {
@@ -553,13 +573,16 @@ const ScreeningManagementPage = () => {
       setScreeningForm((previous) => ({ ...previous, triageProfessionalId: previous.triageProfessionalId || currentUser.id }));
       setClassificationForm((previous) => ({ ...previous, professionalId: previous.professionalId || currentUser.id }));
       setRoutingForm((previous) => ({ ...previous, professionalId: previous.professionalId || currentUser.id }));
+      setAttendanceForm((previous) => ({ ...previous, professionalId: previous.professionalId || currentUser.id }));
+      setCancelForm((previous) => ({ ...previous, professionalId: previous.professionalId || currentUser.id }));
     }
   }, [currentUser]);
 
   const stats = useMemo(() => {
     const waitingClassification = screenings.filter((item) => item.status === 'AGUARDANDO_CLASSIFICACAO').length;
-    const classified = screenings.filter((item) => item.status === 'CLASSIFICADA').length;
     const waitingCare = screenings.filter((item) => item.status === 'AGUARDANDO_ATENDIMENTO').length;
+    const inProgress = screenings.filter((item) => item.status === 'EM_ATENDIMENTO').length;
+    const finished = screenings.filter((item) => item.status === 'FINALIZADA').length;
 
     return [
       {
@@ -575,10 +598,16 @@ const ScreeningManagementPage = () => {
         className: 'warning',
       },
       {
-        label: 'Aguardando Atendimento',
-        value: waitingCare,
-        caption: classified > 0 ? `${classified} ja classificadas` : 'Fila clinica em acompanhamento',
+        label: 'Em Fila / Atendimento',
+        value: waitingCare + inProgress,
+        caption: inProgress > 0 ? `${inProgress} em atendimento agora` : 'Fila clinica em acompanhamento',
         className: 'success',
+      },
+      {
+        label: 'Finalizadas',
+        value: finished,
+        caption: 'Atendimentos concluidos hoje',
+        className: '',
       },
     ];
   }, [screenings]);
@@ -782,6 +811,70 @@ const ScreeningManagementPage = () => {
 
       await routeScreening(selectedScreeningId, payload);
       setFeedback({ message: 'Paciente encaminhado com sucesso!', type: 'success' });
+      await refreshSelectedScreening();
+      await loadScreenings(filters.status, selectedScreeningId);
+    } catch (error) {
+      setFeedback({ message: error.message, type: 'error' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleStartAttendance = async (event) => {
+    event.preventDefault();
+    if (!selectedScreeningId) return;
+
+    try {
+      setIsActionLoading(true);
+      await startScreeningAttendance(selectedScreeningId, {
+        professionalId: attendanceForm.professionalId,
+      });
+      setFeedback({ message: 'Atendimento iniciado com sucesso!', type: 'success' });
+      await refreshSelectedScreening();
+      await loadScreenings(filters.status, selectedScreeningId);
+    } catch (error) {
+      setFeedback({ message: error.message, type: 'error' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleFinishAttendance = async (event) => {
+    event.preventDefault();
+    if (!selectedScreeningId) return;
+
+    try {
+      setIsActionLoading(true);
+      await finishScreeningAttendance(selectedScreeningId, {
+        professionalId: attendanceForm.professionalId,
+        notes: attendanceForm.notes || null,
+      });
+      setFeedback({ message: 'Atendimento finalizado com sucesso!', type: 'success' });
+      await refreshSelectedScreening();
+      await loadScreenings(filters.status, selectedScreeningId);
+    } catch (error) {
+      setFeedback({ message: error.message, type: 'error' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleCancelScreening = async (event) => {
+    event.preventDefault();
+    if (!selectedScreeningId) return;
+
+    const action = cancelForm.absent ? 'marcar como ausente' : 'cancelar';
+    const confirmed = window.confirm(`Deseja realmente ${action} esta triagem?`);
+    if (!confirmed) return;
+
+    try {
+      setIsActionLoading(true);
+      await cancelScreening(selectedScreeningId, {
+        professionalId: cancelForm.professionalId,
+        reason: cancelForm.reason,
+        absent: cancelForm.absent,
+      });
+      setFeedback({ message: `Triagem ${cancelForm.absent ? 'marcada como ausente' : 'cancelada'} com sucesso!`, type: 'success' });
       await refreshSelectedScreening();
       await loadScreenings(filters.status, selectedScreeningId);
     } catch (error) {
@@ -1157,8 +1250,8 @@ const ScreeningManagementPage = () => {
                 {selectedScreening.status === 'AGUARDANDO_ATENDIMENTO' ? (
                   <>
                     <div className="section-divider">
-                      <h4>Encaminhamento concluido</h4>
-                      <p>Esta triagem ja entrou na fila do setor de destino e esta pronta para acompanhamento operacional.</p>
+                      <h4>Fila de atendimento</h4>
+                      <p>Esta triagem ja entrou na fila do setor de destino. Inicie o atendimento quando o paciente for chamado.</p>
                     </div>
 
                     <div className="patient-info screening-summary-grid">
@@ -1179,7 +1272,168 @@ const ScreeningManagementPage = () => {
                         <div className="info-value">{selectedScreening.queueMetrics?.remainingMinutes ?? '--'} min</div>
                       </div>
                     </div>
+
+                    <form className="inline-form" onSubmit={handleStartAttendance}>
+                      <div className="section-divider">
+                        <h4>Iniciar atendimento</h4>
+                        <p>Registre o inicio do atendimento quando o paciente entrar no consultorio.</p>
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="attendanceProfessionalId">ID do profissional atendente</label>
+                        <input
+                          id="attendanceProfessionalId"
+                          type="text"
+                          value={attendanceForm.professionalId}
+                          onChange={(e) => setAttendanceForm((prev) => ({ ...prev, professionalId: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <button type="submit" className={`btn ${isActionLoading ? 'is-loading' : ''}`} disabled={isActionLoading}>
+                        {isActionLoading ? 'Iniciando...' : 'Iniciar atendimento'}
+                      </button>
+                    </form>
                   </>
+                ) : null}
+
+                {selectedScreening.status === 'EM_ATENDIMENTO' ? (
+                  <>
+                    <div className="section-divider">
+                      <h4>Atendimento em andamento</h4>
+                      <p>O paciente esta sendo atendido. Finalize quando a consulta for encerrada.</p>
+                    </div>
+
+                    <div className="patient-info screening-summary-grid">
+                      <div className="info-item">
+                        <div className="info-label">Setor</div>
+                        <div className="info-value">{formatListLabel(selectedScreening.destinationSector)}</div>
+                      </div>
+                      <div className="info-item">
+                        <div className="info-label">Iniciado em</div>
+                        <div className="info-value">{formatDateTime(selectedScreening.startedAt)}</div>
+                      </div>
+                    </div>
+
+                    <form className="inline-form" onSubmit={handleFinishAttendance}>
+                      <div className="section-divider">
+                        <h4>Finalizar atendimento</h4>
+                        <p>Registre a conclusao do atendimento. O campo de observacoes e opcional.</p>
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="finishProfessionalId">ID do profissional</label>
+                        <input
+                          id="finishProfessionalId"
+                          type="text"
+                          value={attendanceForm.professionalId}
+                          onChange={(e) => setAttendanceForm((prev) => ({ ...prev, professionalId: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="finishNotes">Observacoes de encerramento</label>
+                        <textarea
+                          id="finishNotes"
+                          rows={3}
+                          value={attendanceForm.notes}
+                          onChange={(e) => setAttendanceForm((prev) => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Opcional"
+                        />
+                      </div>
+                      <button type="submit" className={`btn ${isActionLoading ? 'is-loading' : ''}`} disabled={isActionLoading}>
+                        {isActionLoading ? 'Finalizando...' : 'Finalizar atendimento'}
+                      </button>
+                    </form>
+                  </>
+                ) : null}
+
+                {selectedScreening.status === 'FINALIZADA' ? (
+                  <>
+                    <div className="section-divider">
+                      <h4>Atendimento finalizado</h4>
+                      <p>Esta triagem foi concluida com sucesso. Nenhuma acao adicional e necessaria.</p>
+                    </div>
+                    <div className="patient-info screening-summary-grid">
+                      <div className="info-item">
+                        <div className="info-label">Setor</div>
+                        <div className="info-value">{formatListLabel(selectedScreening.destinationSector)}</div>
+                      </div>
+                      <div className="info-item">
+                        <div className="info-label">Inicio</div>
+                        <div className="info-value">{formatDateTime(selectedScreening.startedAt)}</div>
+                      </div>
+                      <div className="info-item">
+                        <div className="info-label">Encerramento</div>
+                        <div className="info-value">{formatDateTime(selectedScreening.finishedAt)}</div>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+
+                {(selectedScreening.status === 'CANCELADA' || selectedScreening.status === 'AUSENTE') ? (
+                  <>
+                    <div className="section-divider">
+                      <h4>{selectedScreening.status === 'AUSENTE' ? 'Paciente ausente' : 'Triagem cancelada'}</h4>
+                      <p>Esta triagem foi encerrada sem atendimento.</p>
+                    </div>
+                    <div className="patient-info screening-summary-grid">
+                      <div className="info-item">
+                        <div className="info-label">Motivo</div>
+                        <div className="info-value">{selectedScreening.cancellationReason || '--'}</div>
+                      </div>
+                      <div className="info-item">
+                        <div className="info-label">Encerrada em</div>
+                        <div className="info-value">{formatDateTime(selectedScreening.finishedAt)}</div>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+
+                {['AGUARDANDO_CLASSIFICACAO', 'CLASSIFICADA', 'AGUARDANDO_ATENDIMENTO', 'EM_ATENDIMENTO'].includes(selectedScreening.status) ? (
+                  <form className="inline-form" onSubmit={handleCancelScreening}>
+                    <div className="section-divider">
+                      <h4>Cancelar / Registrar ausencia</h4>
+                      <p>Use para encerrar a triagem sem atendimento. Marque "ausente" se o paciente foi chamado mas nao compareceu.</p>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="cancelProfessionalId">ID do profissional</label>
+                        <input
+                          id="cancelProfessionalId"
+                          type="text"
+                          value={cancelForm.professionalId}
+                          onChange={(e) => setCancelForm((prev) => ({ ...prev, professionalId: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '4px' }}>
+                        <label className="check-chip">
+                          <input
+                            type="checkbox"
+                            checked={cancelForm.absent}
+                            onChange={(e) => setCancelForm((prev) => ({ ...prev, absent: e.target.checked }))}
+                          />
+                          <span>Paciente ausente</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="cancelReason">Motivo</label>
+                      <textarea
+                        id="cancelReason"
+                        rows={2}
+                        value={cancelForm.reason}
+                        onChange={(e) => setCancelForm((prev) => ({ ...prev, reason: e.target.value }))}
+                        placeholder="Descreva o motivo do cancelamento ou ausencia"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className={`btn btn-secondary ${isActionLoading ? 'is-loading' : ''}`}
+                      disabled={isActionLoading}
+                    >
+                      {isActionLoading ? 'Processando...' : cancelForm.absent ? 'Registrar ausencia' : 'Cancelar triagem'}
+                    </button>
+                  </form>
                 ) : null}
               </>
             )}

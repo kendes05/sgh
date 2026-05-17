@@ -96,6 +96,13 @@ public class DoctorService {
         return toResponse(doctor);
     }
 
+    @Transactional(readOnly = true)
+    public DoctorResponse getDoctorByUserAuthId(String userAuthId) {
+        Doctor doctor = repository.findByUserAuthIdAndIsActiveTrue(userAuthId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profissional nao encontrado para este usuario."));
+        return toResponse(doctor);
+    }
+
     @Transactional
     public DoctorResponse updateDoctor(UUID id, DoctorRequest request) {
         Doctor doctor = getActiveDoctor(id);

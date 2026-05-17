@@ -83,7 +83,9 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Resposta do login:', response);
       
-      const { token, user, mustChangePassword } = response;
+      const { token, mustChangePassword } = response;
+      // Normalize userId → id so currentUser?.id works across the app
+      const user = { ...response.user, id: response.user?.userId };
 
       // Salva no estado
       setAuthToken(token);

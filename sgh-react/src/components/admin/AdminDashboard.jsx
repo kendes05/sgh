@@ -107,8 +107,10 @@ const AdminDashboard = () => {
       const payload = {
         nome: formData.nome,
         email: formData.email,
+        cpf: formData.cpf,
         telefone: formData.telefone,
         genero: formData.genero,
+        tipoSanguineo: formData.tipoSanguineo,
         dataNascimento: formData.dataNascimento,
       };
 
@@ -140,7 +142,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      await deletePatient(patient.email);
+      await deletePatient(patient.id);
       setFeedback({ message: 'Paciente desativado com sucesso!', type: 'success' });
       await loadPatients();
     } catch (error) {
