@@ -19,11 +19,7 @@ export const formatGender = (value) => {
 export const formatSex = (value) => formatGender(value);
 
 export const formatDoctorRole = (value) => {
-  const labels = {
-    medic: 'Médico(a)',
-    nurse: 'Enfermeiro(a)',
-  };
-
+  const labels = { medic: 'Médico(a)', nurse: 'Enfermeiro(a)', MEDIC: 'Médico(a)', NURSE: 'Enfermeiro(a)' };
   return labels[value] ?? value ?? '--';
 };
 

@@ -847,7 +847,7 @@ const ScreeningManagementPage = () => {
       setIsActionLoading(true);
       await finishScreeningAttendance(selectedScreeningId, {
         professionalId: attendanceForm.professionalId,
-        notes: attendanceForm.notes || null,
+        dischargeNotes: attendanceForm.notes || null,
       });
       setFeedback({ message: 'Atendimento finalizado com sucesso!', type: 'success' });
       await refreshSelectedScreening();

@@ -23,7 +23,9 @@ const PatientDashboard = () => {
         setIsLoading(true);
         setError('');
 
-        const patientData = await getPatientByEmail(currentUser.email);
+        const patientList = await getPatientByEmail(currentUser.email);
+        const patientData = Array.isArray(patientList) ? patientList[0] : patientList;
+        if (!patientData) throw new Error('Perfil de paciente nao encontrado.');
         setPatient(patientData);
 
         const [screeningResult, medicalRecordResult] = await Promise.allSettled([

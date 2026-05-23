@@ -41,7 +41,13 @@ const LoginScreen = () => {
       return;
     }
 
-    navigate(result.user.role?.toLowerCase() === 'admin' ? '/admin' : '/paciente');
+    const roleRoutes = {
+      admin: '/admin/dashboard',
+      medic: '/medic/dashboard',
+      nurse: '/nurse/dashboard',
+      patient: '/patient/dashboard',
+    };
+    navigate(roleRoutes[result.user.role?.toLowerCase()] ?? '/');
   };
 
   return (

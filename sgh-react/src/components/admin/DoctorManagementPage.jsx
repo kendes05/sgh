@@ -44,13 +44,13 @@ const DoctorManagementPage = () => {
       },
       {
         label: 'Médicos',
-        value: doctors.filter((doctor) => doctor.role === 'medic').length,
+        value: doctors.filter((d) => d.role?.toLowerCase() === 'medic').length,
         caption: 'Profissionais com perfil médico',
         className: 'success',
       },
       {
         label: 'Enfermeiros',
-        value: doctors.filter((doctor) => doctor.role === 'nurse').length,
+        value: doctors.filter((d) => d.role?.toLowerCase() === 'nurse').length,
         caption: 'Profissionais com perfil de enfermagem',
         className: 'warning',
       },

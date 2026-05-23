@@ -48,7 +48,8 @@ const ChangePassword = () => {
     setFeedback({ message: 'Senha alterada com sucesso! Redirecionando...', type: 'success' });
 
     window.setTimeout(() => {
-      navigate(currentUser?.role?.toLowerCase() === 'admin' ? '/admin' : '/paciente');
+      const roleRoutes = { admin: '/admin/dashboard', medic: '/medic/dashboard', nurse: '/nurse/dashboard', patient: '/patient/dashboard' };
+      navigate(roleRoutes[currentUser?.role?.toLowerCase()] ?? '/');
     }, 1200);
   };
 

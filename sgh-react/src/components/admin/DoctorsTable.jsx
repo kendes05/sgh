@@ -38,7 +38,7 @@ const DoctorsTable = ({ doctors, isLoading, onEdit, onDelete }) => {
                 <td>{doctor.nome}</td>
                 <td>{formatDoctorRole(doctor.role)}</td>
                 <td>{doctor.especialidadePrincipal ?? '--'}</td>
-                <td>{doctor.crm_coren}</td>
+                <td>{doctor.crmCoren}</td>
                 <td>{doctor.email}</td>
                 <td>{doctor.telefone}</td>
                 <td>{formatSex(doctor.sexo)}</td>
