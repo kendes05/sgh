@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ptimb\\\\OneDrive\\\\Área de Trabalho\\\\SGH\\\\backend\\\\doctor-service\\\\src\" -Recurse -File)",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}
