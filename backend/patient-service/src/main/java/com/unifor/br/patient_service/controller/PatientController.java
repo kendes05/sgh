@@ -61,7 +61,6 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deletar(@PathVariable UUID id) {
         patientService.deletar(id);
         return ResponseEntity.noContent().build();

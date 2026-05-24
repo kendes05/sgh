@@ -169,6 +169,72 @@ export const deleteProfissional = async (doctor, allUsers) => {
   }
 };
 
+// ─── Pacientes (patient-service) ─────────────────────────────────────────────
+
+export const getAllPatients = async () => {
+  try {
+    const { data } = await api.get('/patients');
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao carregar pacientes.'));
+  }
+};
+
+export const getPatientStats = async () => {
+  try {
+    const { data } = await api.get('/patients/stats');
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao carregar estatísticas de pacientes.'));
+  }
+};
+
+export const searchPatientByEmail = async (email) => {
+  try {
+    const { data } = await api.get('/patients', { params: { email } });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao buscar paciente por e-mail.'));
+  }
+};
+
+export const searchPatientByCpf = async (cpf) => {
+  try {
+    const { data } = await api.get(`/patients/cpf/${cpf}`);
+    // endpoint retorna um único paciente, normaliza para array
+    return Array.isArray(data) ? data : [data];
+  } catch (error) {
+    if (error.response?.status === 404) return [];
+    throw new Error(extractError(error, 'Erro ao buscar paciente por CPF.'));
+  }
+};
+
+export const createPatient = async (payload) => {
+  try {
+    const { data } = await api.post('/patients', payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao cadastrar paciente.'));
+  }
+};
+
+export const updatePatient = async (id, payload) => {
+  try {
+    const { data } = await api.put(`/patients/${id}`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao atualizar paciente.'));
+  }
+};
+
+export const deletePatient = async (id) => {
+  try {
+    await api.delete(`/patients/${id}`);
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao desativar paciente.'));
+  }
+};
+
 // ─── Triagem — estatísticas (screening-service) ───────────────────────────────
 
 export const getScreeningStats = async () => {
