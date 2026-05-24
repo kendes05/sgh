@@ -735,6 +735,33 @@ tbody tr.screening-row-selected {
   background: var(--primary);
 }
 
+.status-pill.success {
+  background: rgba(19, 138, 103, 0.1);
+  color: #0d694f;
+}
+
+.status-pill.success::before {
+  background: #138a67;
+}
+
+.status-pill.muted {
+  background: rgba(95, 111, 134, 0.1);
+  color: var(--text-soft);
+}
+
+.status-pill.muted::before {
+  background: var(--text-soft);
+}
+
+.status-pill.error {
+  background: rgba(198, 79, 79, 0.1);
+  color: #8c3030;
+}
+
+.status-pill.error::before {
+  background: #c64f4f;
+}
+
 .modal {
   display: none;
   position: fixed;
@@ -1056,8 +1083,8 @@ tbody tr.screening-row-selected {
 }
 
 .section-divider {
-  padding-top: 12px;
-  margin: 8px 0 18px;
+  padding-top: 18px;
+  margin: 20px 0 20px;
   border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
@@ -1085,10 +1112,22 @@ tbody tr.screening-row-selected {
   margin-bottom: 4px;
 }
 
-.action-surface,
+.action-surface {
+  display: grid;
+  gap: 14px;
+  background: #f4f8ff;
+  border: 1px solid rgba(26, 77, 143, 0.09);
+  border-radius: 18px;
+  padding: 18px;
+}
+
 .inline-form {
   display: grid;
-  gap: 16px;
+  gap: 18px;
+  background: linear-gradient(180deg, #f6f9ff, #eef4fb);
+  border: 1px solid rgba(26, 77, 143, 0.11);
+  border-radius: 20px;
+  padding: 22px;
 }
 
 .suggestion-card {
@@ -1133,6 +1172,26 @@ tbody tr.screening-row-selected {
 
 .form-row-quad {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.vitals-compact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.vitals-compact .info-item {
+  padding: 12px 14px;
+}
+
+.vitals-compact .info-label {
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.vitals-compact .info-value {
+  font-size: 14px;
 }
 
 .queue-card {
@@ -1216,9 +1275,12 @@ tbody tr.screening-row-selected {
   }
 
   .dashboard-dual-grid,
-  .screening-layout,
-  .form-row-quad {
+  .screening-layout {
     grid-template-columns: 1fr;
+  }
+
+  .form-row-quad {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hero-panel,

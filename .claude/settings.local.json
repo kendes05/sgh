@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\ptimb\\\\OneDrive\\\\Área de Trabalho\\\\SGH\\\\sgh-react\\\\src\" -Recurse | Where-Object { $_.Extension -eq \".tsx\" -or $_.Extension -eq \".ts\" } | Select-Object -ExpandProperty FullName | Sort-Object)"
-    ]
-  }
-}

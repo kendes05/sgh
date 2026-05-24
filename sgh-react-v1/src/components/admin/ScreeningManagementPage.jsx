@@ -333,7 +333,7 @@ const ScreeningFormModal = ({
 
           <div className="section-divider">
             <h4>Sinais vitais</h4>
-            <p>Preencha os dados clinicos para permitir a sugestao automatica da prioridade.</p>
+            <p>Preencha os dados para habilitar a sugestao automatica de prioridade.</p>
           </div>
 
           <div className="form-row form-row-quad">
@@ -1068,34 +1068,33 @@ const ScreeningManagementPage = () => {
 
                 <div className="section-divider">
                   <h4>Sinais vitais</h4>
-                  <p>Resumo clinico usado pelo motor de classificacao.</p>
                 </div>
 
-                <div className="patient-info screening-summary-grid">
+                <div className="vitals-compact">
                   <div className="info-item">
-                    <div className="info-label">PA</div>
+                    <div className="info-label">Pressao arterial</div>
                     <div className="info-value">
-                      {selectedScreening.vitalSigns?.pressaoSistolica}/{selectedScreening.vitalSigns?.pressaoDiastolica}
+                      {selectedScreening.vitalSigns?.pressaoSistolica ?? '--'}/{selectedScreening.vitalSigns?.pressaoDiastolica ?? '--'} mmHg
                     </div>
                   </div>
                   <div className="info-item">
-                    <div className="info-label">FC</div>
+                    <div className="info-label">Freq. cardiaca</div>
                     <div className="info-value">{selectedScreening.vitalSigns?.frequenciaCardiaca ?? '--'} bpm</div>
                   </div>
                   <div className="info-item">
-                    <div className="info-label">FR</div>
+                    <div className="info-label">Freq. respiratoria</div>
                     <div className="info-value">{selectedScreening.vitalSigns?.frequenciaRespiratoria ?? '--'} irpm</div>
                   </div>
                   <div className="info-item">
-                    <div className="info-label">SpO2</div>
+                    <div className="info-label">Saturacao O₂</div>
                     <div className="info-value">{selectedScreening.vitalSigns?.saturacaoOxigenio ?? '--'}%</div>
                   </div>
                   <div className="info-item">
                     <div className="info-label">Temperatura</div>
-                    <div className="info-value">{selectedScreening.vitalSigns?.temperatura ?? '--'} C</div>
+                    <div className="info-value">{selectedScreening.vitalSigns?.temperatura ?? '--'} °C</div>
                   </div>
                   <div className="info-item">
-                    <div className="info-label">Dor</div>
+                    <div className="info-label">Escala de dor</div>
                     <div className="info-value">{selectedScreening.vitalSigns?.escalaDor ?? '--'}/10</div>
                   </div>
                 </div>
@@ -1136,12 +1135,12 @@ const ScreeningManagementPage = () => {
                       ) : null}
                     </div>
 
-                    <form className="inline-form" onSubmit={handleValidateClassification}>
-                      <div className="section-divider">
-                        <h4>Validar classificacao final</h4>
-                        <p>Se a prioridade final divergir da sugerida, a justificativa se torna obrigatoria no backend.</p>
-                      </div>
+                    <div className="section-divider">
+                      <h4>Validar classificacao final</h4>
+                      <p>Se a prioridade final divergir da sugerida, a justificativa se torna obrigatoria no backend.</p>
+                    </div>
 
+                    <form className="inline-form" onSubmit={handleValidateClassification}>
                       <div className="form-row">
                         <div className="form-group">
                           <label htmlFor="classificationProfessionalId">ID do profissional</label>
@@ -1193,13 +1192,14 @@ const ScreeningManagementPage = () => {
                 ) : null}
 
                 {selectedScreening.status === 'CLASSIFICADA' ? (
-                  <form className="inline-form" onSubmit={handleRouteScreening}>
+                  <>
                     <div className="section-divider">
                       <h4>Encaminhar paciente</h4>
                       <p>Voce pode informar o setor manualmente ou deixar o motor de roteamento decidir o destino.</p>
                     </div>
 
-                    <div className="form-row">
+                    <form className="inline-form" onSubmit={handleRouteScreening}>
+                      <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="routingProfessionalId">ID do profissional</label>
                         <input
@@ -1241,10 +1241,11 @@ const ScreeningManagementPage = () => {
                       />
                     </div>
 
-                    <button type="submit" className={`btn ${isActionLoading ? 'is-loading' : ''}`} disabled={isActionLoading}>
-                      {isActionLoading ? 'Encaminhando...' : 'Encaminhar paciente'}
-                    </button>
-                  </form>
+                      <button type="submit" className={`btn ${isActionLoading ? 'is-loading' : ''}`} disabled={isActionLoading}>
+                        {isActionLoading ? 'Encaminhando...' : 'Encaminhar paciente'}
+                      </button>
+                    </form>
+                  </>
                 ) : null}
 
                 {selectedScreening.status === 'AGUARDANDO_ATENDIMENTO' ? (
@@ -1254,7 +1255,7 @@ const ScreeningManagementPage = () => {
                       <p>Esta triagem ja entrou na fila do setor de destino. Inicie o atendimento quando o paciente for chamado.</p>
                     </div>
 
-                    <div className="patient-info screening-summary-grid">
+                    <div className="vitals-compact">
                       <div className="info-item">
                         <div className="info-label">Setor de destino</div>
                         <div className="info-value">{formatListLabel(selectedScreening.destinationSector)}</div>
@@ -1273,11 +1274,12 @@ const ScreeningManagementPage = () => {
                       </div>
                     </div>
 
+                    <div className="section-divider">
+                      <h4>Iniciar atendimento</h4>
+                      <p>Registre o inicio do atendimento quando o paciente entrar no consultorio.</p>
+                    </div>
+
                     <form className="inline-form" onSubmit={handleStartAttendance}>
-                      <div className="section-divider">
-                        <h4>Iniciar atendimento</h4>
-                        <p>Registre o inicio do atendimento quando o paciente entrar no consultorio.</p>
-                      </div>
                       <div className="form-group">
                         <label htmlFor="attendanceProfessionalId">ID do profissional atendente</label>
                         <input
@@ -1302,7 +1304,7 @@ const ScreeningManagementPage = () => {
                       <p>O paciente esta sendo atendido. Finalize quando a consulta for encerrada.</p>
                     </div>
 
-                    <div className="patient-info screening-summary-grid">
+                    <div className="vitals-compact">
                       <div className="info-item">
                         <div className="info-label">Setor</div>
                         <div className="info-value">{formatListLabel(selectedScreening.destinationSector)}</div>
@@ -1313,11 +1315,12 @@ const ScreeningManagementPage = () => {
                       </div>
                     </div>
 
+                    <div className="section-divider">
+                      <h4>Finalizar atendimento</h4>
+                      <p>Registre a conclusao do atendimento. O campo de observacoes e opcional.</p>
+                    </div>
+
                     <form className="inline-form" onSubmit={handleFinishAttendance}>
-                      <div className="section-divider">
-                        <h4>Finalizar atendimento</h4>
-                        <p>Registre a conclusao do atendimento. O campo de observacoes e opcional.</p>
-                      </div>
                       <div className="form-group">
                         <label htmlFor="finishProfessionalId">ID do profissional</label>
                         <input
@@ -1351,7 +1354,7 @@ const ScreeningManagementPage = () => {
                       <h4>Atendimento finalizado</h4>
                       <p>Esta triagem foi concluida com sucesso. Nenhuma acao adicional e necessaria.</p>
                     </div>
-                    <div className="patient-info screening-summary-grid">
+                    <div className="vitals-compact">
                       <div className="info-item">
                         <div className="info-label">Setor</div>
                         <div className="info-value">{formatListLabel(selectedScreening.destinationSector)}</div>
@@ -1374,7 +1377,7 @@ const ScreeningManagementPage = () => {
                       <h4>{selectedScreening.status === 'AUSENTE' ? 'Paciente ausente' : 'Triagem cancelada'}</h4>
                       <p>Esta triagem foi encerrada sem atendimento.</p>
                     </div>
-                    <div className="patient-info screening-summary-grid">
+                    <div className="vitals-compact">
                       <div className="info-item">
                         <div className="info-label">Motivo</div>
                         <div className="info-value">{selectedScreening.cancellationReason || '--'}</div>
@@ -1388,11 +1391,13 @@ const ScreeningManagementPage = () => {
                 ) : null}
 
                 {['AGUARDANDO_CLASSIFICACAO', 'CLASSIFICADA', 'AGUARDANDO_ATENDIMENTO', 'EM_ATENDIMENTO'].includes(selectedScreening.status) ? (
-                  <form className="inline-form" onSubmit={handleCancelScreening}>
+                  <>
                     <div className="section-divider">
                       <h4>Cancelar / Registrar ausencia</h4>
                       <p>Use para encerrar a triagem sem atendimento. Marque "ausente" se o paciente foi chamado mas nao compareceu.</p>
                     </div>
+
+                    <form className="inline-form" onSubmit={handleCancelScreening}>
                     <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="cancelProfessionalId">ID do profissional</label>
@@ -1433,7 +1438,8 @@ const ScreeningManagementPage = () => {
                     >
                       {isActionLoading ? 'Processando...' : cancelForm.absent ? 'Registrar ausencia' : 'Cancelar triagem'}
                     </button>
-                  </form>
+                    </form>
+                  </>
                 ) : null}
               </>
             )}
