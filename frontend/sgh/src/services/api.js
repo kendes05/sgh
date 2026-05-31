@@ -250,6 +250,20 @@ export const getScreeningStats = async () => {
 };
 
 /**
+ * Retorna a triagem ativa do paciente (qualquer status não-terminal).
+ * Retorna null se não houver triagem ativa (404).
+ */
+export const getActiveScreeningByPatient = async (patientId) => {
+  try {
+    const { data } = await api.get(`/screenings/active/patient/${patientId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status === 404) return null;
+    throw new Error(extractError(error, 'Erro ao buscar triagem ativa.'));
+  }
+};
+
+/**
  * Retorna a fila global (AGUARDANDO_ATENDIMENTO + EM_ATENDIMENTO),
  * ordenada por prioridade e tempo de espera.
  * Resposta: QueueItemResponse[] { id, patientId, patientName, priority,

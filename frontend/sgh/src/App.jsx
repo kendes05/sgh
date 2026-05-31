@@ -6,7 +6,8 @@ import ChangePasswordPage from './components/auth/ChangePasswordPage';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ReceptionistDashboard from './components/receptionist/ReceptionistDashboard';
 import NurseDashboard from './components/nurse/NurseDashboard';
-import DoctorDashboard from './components/doctor/DoctorDashboard';
+import DoctorDashboard   from './components/doctor/DoctorDashboard';
+import PatientDashboard from './components/patient/PatientDashboard';
 
 const RequireAuth = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -84,6 +85,14 @@ const AppRoutes = () => (
       element={
         <RequireAuth>
           <DoctorDashboard />
+        </RequireAuth>
+      }
+    />
+    <Route
+      path="/patient/dashboard"
+      element={
+        <RequireAuth>
+          <PatientDashboard />
         </RequireAuth>
       }
     />
