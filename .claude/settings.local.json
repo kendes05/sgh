@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ptimb\\\\OneDrive\\\\Área de Trabalho\\\\SGH\" -Force)",
-      "Bash(Select-Object Name, FullName)"
-    ]
-  }
-}

@@ -135,9 +135,7 @@ export const getDoctorsByRole = async (role) => {
  */
 export const createProfissional = async ({ nome, email, role, crmCoren, sexo, telefone, especialidadePrincipal }) => {
   try {
-
     console.log('Creating professional with data:', { nome, email, role, crmCoren, sexo, telefone, especialidadePrincipal });
-
     const { data } = await api.post('/doctor', {
       nome, email, role, crmCoren, sexo, telefone, especialidadePrincipal,
     });
@@ -235,14 +233,35 @@ export const deletePatient = async (id) => {
   }
 };
 
-// ─── Triagem (screening-service) ─────────────────────────────────────────────
+// ─── Triagem — Estatísticas e Fila (screening-service) ───────────────────────
 
+/**
+ * Retorna estatísticas do dia.
+ * Resposta: { totalHoje, porStatus: Map<String,Long>, porPrioridade: Map<String,Long>,
+ *             tempoMedioEsperaMinutos, porSetor: Map<String,Long> }
+ */
 export const getScreeningStats = async () => {
   try {
     const { data } = await api.get('/screenings/stats');
     return data;
   } catch (error) {
     throw new Error(extractError(error, 'Erro ao carregar estatísticas.'));
+  }
+};
+
+/**
+ * Retorna a fila global (AGUARDANDO_ATENDIMENTO + EM_ATENDIMENTO),
+ * ordenada por prioridade e tempo de espera.
+ * Resposta: QueueItemResponse[] { id, patientId, patientName, priority,
+ *   priorityScore, maxWaitMinutes, sector, status, elapsedMinutes,
+ *   remainingMinutes, queuePosition, classifiedAt, startedAt }
+ */
+export const getQueue = async () => {
+  try {
+    const { data } = await api.get('/screenings/queue');
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao carregar fila de atendimento.'));
   }
 };
 
@@ -260,12 +279,14 @@ export const getScreenings = async (params = {}) => {
 
 /**
  * Cria uma triagem.
- * Body: { patientId, patientName, patientBirthDate, susCardNumber?, medicalRecordNumber?,
- *         triageProfessionalId, mainComplaint, symptoms?, complementarySymptoms?,
- *         allergies?, medicationsInUse?, comorbidities?, generalNotes?,
- *         vitalSigns: { pressaoSistolica, pressaoDiastolica, frequenciaCardiaca,
- *                       temperatura, frequenciaRespiratoria, saturacaoOxigenio,
- *                       glicemia?, escalaDor } }
+ * Body: { patientId, patientName, patientBirthDate, susCardNumber?,
+ *         medicalRecordNumber?, triageProfessionalId, mainComplaint,
+ *         symptoms?, complementarySymptoms?, allergies?, medicationsInUse?,
+ *         comorbidities?, generalNotes?,
+ *         vitalSigns: { pressaoSistolica (30-300), pressaoDiastolica (20-200),
+ *                       frequenciaCardiaca (20-250), temperatura (25.0-45.0),
+ *                       frequenciaRespiratoria (5-80), saturacaoOxigenio (50-100),
+ *                       glicemia? (20-600), escalaDor (0-10) } }
  */
 export const createScreening = async (payload) => {
   try {
@@ -277,8 +298,8 @@ export const createScreening = async (payload) => {
 };
 
 /**
- * Solicita sugestão de classificação da IA para a triagem.
- * Retorna: { suggestedPriority, score, maxWaitMinutes, reasons[] }
+ * Solicita sugestão de classificação da IA.
+ * Resposta: { suggestedPriority, score, maxWaitMinutes, reasons[] }
  */
 export const getClassificationSuggestion = async (screeningId) => {
   try {
@@ -290,7 +311,7 @@ export const getClassificationSuggestion = async (screeningId) => {
 };
 
 /**
- * Confirma a classificação de risco da triagem (requer role NURSE ou MEDIC).
+ * Confirma classificação de risco (requer role NURSE ou MEDIC).
  * Body: { professionalId, finalPriority, overrideJustification? }
  * Enums PriorityLevel: VERMELHO, LARANJA, AMARELO, VERDE, AZUL
  */
@@ -319,11 +340,36 @@ export const routeScreening = async (screeningId, payload) => {
   }
 };
 
+/**
+ * Inicia o atendimento de um paciente (status: AGUARDANDO_ATENDIMENTO → EM_ATENDIMENTO).
+ * Body: { professionalId }
+ */
+export const startAttendance = async (screeningId, professionalId) => {
+  try {
+    const { data } = await api.post(`/screenings/${screeningId}/attendance/start`, { professionalId });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao iniciar atendimento.'));
+  }
+};
+
+/**
+ * Finaliza o atendimento de um paciente (status: EM_ATENDIMENTO → FINALIZADA).
+ * Body: { professionalId, dischargeNotes? }
+ */
+export const finishAttendance = async (screeningId, payload) => {
+  try {
+    const { data } = await api.post(`/screenings/${screeningId}/attendance/finish`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao finalizar atendimento.'));
+  }
+};
+
 // ─── Prontuários (medical-records-service) ────────────────────────────────────
 
 /**
- * Busca o prontuário pelo ID do paciente.
- * Retorna null se não encontrado (404).
+ * Busca prontuário pelo ID do paciente. Retorna null se não encontrado (404).
  */
 export const getMedicalRecordByPatient = async (patientId) => {
   try {
@@ -349,6 +395,21 @@ export const createMedicalRecord = async (patientId) => {
 };
 
 /**
+ * Registra atendimento médico no prontuário (requer role MEDIC).
+ * Body: { dataAtendimento (ISO 8601, ex: "2024-01-15T10:30:00"),
+ *         idProfissional, tipoAtendimento, observacoesClinicas }
+ * Enums AppointmentType: CONSULTA, RETORNO, EMERGENCIA
+ */
+export const addAppointment = async (recordId, payload) => {
+  try {
+    const { data } = await api.post(`/medical-records/${recordId}/appointments`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao registrar atendimento.'));
+  }
+};
+
+/**
  * Adiciona medicamento ao prontuário.
  * Body: { nomeMedicamento, dosagem, duracaoTratamento, observacoes?, dataInicio? }
  */
@@ -363,7 +424,7 @@ export const addMedication = async (recordId, payload) => {
 
 /**
  * Adiciona exame ao prontuário.
- * Body: { tipoExame, dataRealizacao, resultadoTexto?, resultadoEstruturado? }
+ * Body: { tipoExame, dataRealizacao (YYYY-MM-DD), resultadoTexto?, resultadoEstruturado? }
  */
 export const addExam = async (recordId, payload) => {
   try {
