@@ -235,7 +235,7 @@ export const deletePatient = async (id) => {
   }
 };
 
-// ─── Triagem — estatísticas (screening-service) ───────────────────────────────
+// ─── Triagem (screening-service) ─────────────────────────────────────────────
 
 export const getScreeningStats = async () => {
   try {
@@ -243,6 +243,134 @@ export const getScreeningStats = async () => {
     return data;
   } catch (error) {
     throw new Error(extractError(error, 'Erro ao carregar estatísticas.'));
+  }
+};
+
+/**
+ * Lista triagens. Parâmetros opcionais: { status, patientId }
+ */
+export const getScreenings = async (params = {}) => {
+  try {
+    const { data } = await api.get('/screenings', { params });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao carregar triagens.'));
+  }
+};
+
+/**
+ * Cria uma triagem.
+ * Body: { patientId, patientName, patientBirthDate, susCardNumber?, medicalRecordNumber?,
+ *         triageProfessionalId, mainComplaint, symptoms?, complementarySymptoms?,
+ *         allergies?, medicationsInUse?, comorbidities?, generalNotes?,
+ *         vitalSigns: { pressaoSistolica, pressaoDiastolica, frequenciaCardiaca,
+ *                       temperatura, frequenciaRespiratoria, saturacaoOxigenio,
+ *                       glicemia?, escalaDor } }
+ */
+export const createScreening = async (payload) => {
+  try {
+    const { data } = await api.post('/screenings', payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao criar triagem.'));
+  }
+};
+
+/**
+ * Solicita sugestão de classificação da IA para a triagem.
+ * Retorna: { suggestedPriority, score, maxWaitMinutes, reasons[] }
+ */
+export const getClassificationSuggestion = async (screeningId) => {
+  try {
+    const { data } = await api.post(`/screenings/${screeningId}/classification/suggestion`);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao obter sugestão de classificação.'));
+  }
+};
+
+/**
+ * Confirma a classificação de risco da triagem (requer role NURSE ou MEDIC).
+ * Body: { professionalId, finalPriority, overrideJustification? }
+ * Enums PriorityLevel: VERMELHO, LARANJA, AMARELO, VERDE, AZUL
+ */
+export const validateClassification = async (screeningId, payload) => {
+  try {
+    const { data } = await api.post(`/screenings/${screeningId}/classification`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao confirmar classificação.'));
+  }
+};
+
+/**
+ * Encaminha o paciente para um setor.
+ * Body: { professionalId, destinationSector?, routingNotes? }
+ * Enums DestinationSector: SALA_EMERGENCIA, CONSULTORIO_CLINICA_GERAL,
+ *   CONSULTORIO_PEDIATRICO, CONSULTORIO_ORTOPEDICO, SALA_MEDICACAO,
+ *   OBSERVACAO, SALA_SUTURAS
+ */
+export const routeScreening = async (screeningId, payload) => {
+  try {
+    const { data } = await api.post(`/screenings/${screeningId}/routing`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao encaminhar paciente.'));
+  }
+};
+
+// ─── Prontuários (medical-records-service) ────────────────────────────────────
+
+/**
+ * Busca o prontuário pelo ID do paciente.
+ * Retorna null se não encontrado (404).
+ */
+export const getMedicalRecordByPatient = async (patientId) => {
+  try {
+    const { data } = await api.get(`/medical-records/patient/${patientId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status === 404) return null;
+    throw new Error(extractError(error, 'Erro ao carregar prontuário.'));
+  }
+};
+
+/**
+ * Cria um prontuário para o paciente.
+ * Body: { idPaciente }
+ */
+export const createMedicalRecord = async (patientId) => {
+  try {
+    const { data } = await api.post('/medical-records', { idPaciente: patientId });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao criar prontuário.'));
+  }
+};
+
+/**
+ * Adiciona medicamento ao prontuário.
+ * Body: { nomeMedicamento, dosagem, duracaoTratamento, observacoes?, dataInicio? }
+ */
+export const addMedication = async (recordId, payload) => {
+  try {
+    const { data } = await api.post(`/medical-records/${recordId}/medications`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao adicionar medicamento.'));
+  }
+};
+
+/**
+ * Adiciona exame ao prontuário.
+ * Body: { tipoExame, dataRealizacao, resultadoTexto?, resultadoEstruturado? }
+ */
+export const addExam = async (recordId, payload) => {
+  try {
+    const { data } = await api.post(`/medical-records/${recordId}/exams`, payload);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao adicionar exame.'));
   }
 };
 
