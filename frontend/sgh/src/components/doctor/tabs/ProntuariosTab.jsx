@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AlertMessage from '../../ui/AlertMessage';
 import Modal from '../../ui/Modal';
+import ScreeningDetail from '../../shared/ScreeningDetail';
 import {
   getAllPatients,
   getMedicalRecordByPatient,
@@ -8,6 +9,7 @@ import {
   addAppointment,
   addMedication,
   addExam,
+  getScreenings,
 } from '../../../services/api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,11 +59,46 @@ const APPOINTMENT_TYPE_LABELS = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+const STATUS_LABELS = {
+  AGUARDANDO_CLASSIFICACAO: 'Aguardando classificação',
+  CLASSIFICADA:             'Classificada',
+  AGUARDANDO_ATENDIMENTO:   'Aguardando atendimento',
+  EM_ATENDIMENTO:           'Em atendimento',
+  FINALIZADA:               'Finalizada',
+  CANCELADA:                'Cancelada',
+  AUSENTE:                  'Ausente',
+};
+
+const STATUS_BADGE = {
+  AGUARDANDO_CLASSIFICACAO: 'badge-receptionist',
+  CLASSIFICADA:             'badge-medic',
+  AGUARDANDO_ATENDIMENTO:   'badge-nurse',
+  EM_ATENDIMENTO:           'badge-active',
+  FINALIZADA:               'badge-active',
+  CANCELADA:                'badge-inactive',
+  AUSENTE:                  'badge-inactive',
+};
+
+const PRIORITY_COLORS = {
+  VERMELHO: '#dc2626', LARANJA: '#ea580c',
+  AMARELO:  '#ca8a04', VERDE:   '#16a34a', AZUL: '#2563eb',
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const ProntuariosTab = ({ doctorId }) => {
   const [patients, setPatients]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [search, setSearch]       = useState('');
+
+  // ── Histórico de triagens
+  const [triagePatient, setTriagePatient]       = useState(null);
+  const [triageList, setTriageList]             = useState([]);
+  const [triageLoading, setTriageLoading]       = useState(false);
+  const [triageError, setTriageError]           = useState('');
+  const [showTriageHistory, setShowTriageHistory] = useState(false);
+  const [expandedTriageId, setExpandedTriageId] = useState(null);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [record, setRecord]       = useState(null);
@@ -142,6 +179,33 @@ const ProntuariosTab = ({ doctorId }) => {
   const openAddMed  = () => { setMedForm(BLANK_MED);  setSubError(''); setSubModal('medication'); };
   const openAddExam = () => { setExamForm(BLANK_EXAM); setSubError(''); setSubModal('exam'); };
   const closeSubModal = () => { setSubModal(null); setSubError(''); };
+
+  // ─── Histórico de triagens ─────────────────────────────────────────
+
+  const openTriageHistory = async (patient) => {
+    setTriagePatient(patient);
+    setTriageList([]);
+    setTriageError('');
+    setExpandedTriageId(null);
+    setShowTriageHistory(true);
+    setTriageLoading(true);
+    try {
+      const data = await getScreenings({ patientId: patient.id });
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setTriageList(data);
+    } catch (err) {
+      setTriageError(err.message);
+    } finally {
+      setTriageLoading(false);
+    }
+  };
+
+  const closeTriageHistory = () => {
+    setShowTriageHistory(false);
+    setTriagePatient(null);
+    setTriageList([]);
+    setExpandedTriageId(null);
+  };
 
   // ─── Submits ───────────────────────────────────────────────────────
 
@@ -268,9 +332,14 @@ const ProntuariosTab = ({ doctorId }) => {
                 <td className="td-muted">{calcAge(p.dataNascimento)}</td>
                 <td className="td-muted">{fmtBloodType(p.tipoSanguineo)}</td>
                 <td>
-                  <button className="btn-sm btn-outline" onClick={() => openRecord(p)}>
-                    Ver prontuário
-                  </button>
+                  <div className="action-group">
+                    <button className="btn-sm btn-outline" onClick={() => openRecord(p)}>
+                      Ver prontuário
+                    </button>
+                    <button className="btn-sm btn-outline" onClick={() => openTriageHistory(p)}>
+                      Triagens
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -590,6 +659,87 @@ const ProntuariosTab = ({ doctorId }) => {
             </button>
           </div>
         </form>
+      </Modal>
+      {/* ── Histórico de triagens modal ─────────────────────────────── */}
+      <Modal
+        isOpen={showTriageHistory}
+        onClose={closeTriageHistory}
+        title={`Triagens — ${triagePatient?.nome}`}
+        maxWidth="640px"
+      >
+        {triageLoading ? (
+          <div className="state-box"><span className="spinner--page" /></div>
+        ) : triageError ? (
+          <AlertMessage message={triageError} type="error" />
+        ) : triageList.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '28px 0', fontSize: 13, color: 'var(--text-muted)' }}>
+            Nenhuma triagem registrada para este paciente.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {triageList.map((sc) => {
+              const priority   = sc.finalPriority || sc.suggestedPriority;
+              const color      = PRIORITY_COLORS[priority] || '#6b7280';
+              const isExpanded = expandedTriageId === sc.id;
+              const fmtDt = (dt) => {
+                if (!dt) return '—';
+                return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+              };
+
+              return (
+                <div key={sc.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                  {/* Summary row – clicável para expandir */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedTriageId(isExpanded ? null : sc.id)}
+                    style={{
+                      width: '100%', background: isExpanded ? '#f0f9ff' : '#fff',
+                      border: 'none', cursor: 'pointer', padding: '12px 16px',
+                      display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+                    }}
+                  >
+                    {/* Status badge */}
+                    <span className={`badge ${STATUS_BADGE[sc.status] || 'badge-inactive'}`} style={{ flexShrink: 0 }}>
+                      {STATUS_LABELS[sc.status] || sc.status}
+                    </span>
+
+                    {/* Priority pill */}
+                    {priority && (
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        background: color + '1a', color, border: `1px solid ${color}40`, flexShrink: 0,
+                      }}>
+                        {priority}
+                      </span>
+                    )}
+
+                    {/* Complaint (truncated) */}
+                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {sc.mainComplaint}
+                    </span>
+
+                    {/* Date */}
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+                      {fmtDt(sc.createdAt)}
+                    </span>
+
+                    {/* Expand chevron */}
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+                      {isExpanded ? '▲' : '▼'}
+                    </span>
+                  </button>
+
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)', background: '#fafafa' }}>
+                      <ScreeningDetail screening={sc} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Modal>
     </div>
   );

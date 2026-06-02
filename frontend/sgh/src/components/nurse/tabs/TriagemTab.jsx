@@ -496,17 +496,17 @@ const TriagemTab = ({ nurseId }) => {
 
           <div className="field">
             <label>Sintomas</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
               {Object.entries(SYMPTOM_LABELS).map(([key, label]) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 400, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={form.symptoms.includes(key)}
-                    onChange={() => toggleSymptom(key)}
-                    disabled={busy}
-                  />
+                <button
+                  key={key}
+                  type="button"
+                  className={`chip${form.symptoms.includes(key) ? ' active' : ''}`}
+                  onClick={() => toggleSymptom(key)}
+                  disabled={busy}
+                >
                   {label}
-                </label>
+                </button>
               ))}
             </div>
           </div>
@@ -609,7 +609,7 @@ const TriagemTab = ({ nurseId }) => {
               borderRadius: 8, padding: '12px 16px', marginBottom: 16,
             }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                Sugestão da IA
+                Sugestão automática
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <span style={{

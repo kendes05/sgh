@@ -250,6 +250,18 @@ export const getScreeningStats = async () => {
 };
 
 /**
+ * Retorna uma triagem pelo ID (dados completos de ScreeningResponse).
+ */
+export const getScreeningById = async (screeningId) => {
+  try {
+    const { data } = await api.get(`/screenings/${screeningId}`);
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error, 'Erro ao carregar triagem.'));
+  }
+};
+
+/**
  * Retorna a triagem ativa do paciente (qualquer status não-terminal).
  * Retorna null se não houver triagem ativa (404).
  */

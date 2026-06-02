@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import AlertMessage from '../../ui/AlertMessage';
 import Modal from '../../ui/Modal';
+import ScreeningDetail from '../../shared/ScreeningDetail';
 import {
   getQueue,
   getScreeningStats,
+  getScreeningById,
   startAttendance,
   finishAttendance,
   getMedicalRecordByPatient,
@@ -30,13 +32,13 @@ const PRIORITY_LABELS = {
 };
 
 const SECTOR_LABELS = {
-  SALA_EMERGENCIA:          'Emergência',
+  SALA_EMERGENCIA:           'Emergência',
   CONSULTORIO_CLINICA_GERAL: 'Clínica Geral',
-  CONSULTORIO_PEDIATRICO:   'Pediatria',
-  CONSULTORIO_ORTOPEDICO:   'Ortopedia',
-  SALA_MEDICACAO:           'Medicação',
-  OBSERVACAO:               'Observação',
-  SALA_SUTURAS:             'Suturas',
+  CONSULTORIO_PEDIATRICO:    'Pediatria',
+  CONSULTORIO_ORTOPEDICO:    'Ortopedia',
+  SALA_MEDICACAO:            'Medicação',
+  OBSERVACAO:                'Observação',
+  SALA_SUTURAS:              'Suturas',
 };
 
 const APPOINTMENT_TYPE_LABELS = {
@@ -78,36 +80,44 @@ const fmtMinutes = (mins) => {
   return `${Math.floor(mins / 60)}h ${mins % 60}min`;
 };
 
-const nowIso = () => new Date().toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+const nowIso = () => new Date().toISOString().slice(0, 16);
 
 // ─── Blank finish form ────────────────────────────────────────────────────────
 
 const BLANK_FINISH = {
-  dischargeNotes:       '',
-  addAppointment:       false,
-  dataAtendimento:      '',
-  tipoAtendimento:      'CONSULTA',
-  observacoesClinicas:  '',
+  dischargeNotes:      '',
+  addAppointment:      false,
+  dataAtendimento:     '',
+  tipoAtendimento:     'CONSULTA',
+  observacoesClinicas: '',
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const AtendimentosTab = ({ doctorId }) => {
-  const [queue, setQueue]   = useState([]);
-  const [stats, setStats]   = useState(null);
+  const [queue, setQueue]     = useState([]);
+  const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState('');
+  const [error, setError]     = useState('');
 
-  // Finish modal
-  const [finishItem, setFinishItem] = useState(null); // QueueItemResponse
-  const [finishForm, setFinishForm] = useState(BLANK_FINISH);
-  const [busy, setBusy]     = useState(false);
-  const [modalError, setModalError] = useState('');
+  // ── Triagem preview modal (antes de iniciar ou consulta durante atendimento)
+  const [previewItem, setPreviewItem]           = useState(null); // QueueItemResponse
+  const [previewScreening, setPreviewScreening] = useState(null); // ScreeningResponse completo
+  const [previewLoading, setPreviewLoading]     = useState(false);
+  const [previewError, setPreviewError]         = useState('');
+  const [previewReadOnly, setPreviewReadOnly]   = useState(false); // true = só visualização
 
-  // Inline "starting" feedback per item
-  const [startingId, setStartingId] = useState(null);
+  // ── Finalizar atendimento modal
+  const [finishItem, setFinishItem]   = useState(null);
+  const [finishForm, setFinishForm]   = useState(BLANK_FINISH);
+  const [finishScreening, setFinishScreening] = useState(null); // triagem do paciente em atendimento
+  const [showTriagemInFinish, setShowTriagemInFinish] = useState(false);
+  const [busy, setBusy]               = useState(false);
+  const [modalError, setModalError]   = useState('');
 
-  // ─── Load data ─────────────────────────────────────────────────────
+  const [startingId, setStartingId]   = useState(null);
+
+  // ─── Load data ──────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -125,31 +135,73 @@ const AtendimentosTab = ({ doctorId }) => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // ─── Start attendance ───────────────────────────────────────────────
+  // ─── Abrir preview da triagem ────────────────────────────────────────
 
-  const handleStart = async (item) => {
-    setStartingId(item.id);
+  /**
+   * Abre o modal de triagem. Se readOnly=false, exibe botão "Iniciar atendimento".
+   * Se readOnly=true, é só consulta (para paciente em atendimento).
+   */
+  const openPreview = async (item, readOnly = false) => {
+    setPreviewItem(item);
+    setPreviewScreening(null);
+    setPreviewError('');
+    setPreviewReadOnly(readOnly);
+    setPreviewLoading(true);
     try {
-      await startAttendance(item.id, doctorId);
+      const s = await getScreeningById(item.id);
+      setPreviewScreening(s);
+    } catch (err) {
+      setPreviewError(err.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewItem(null);
+    setPreviewScreening(null);
+    setPreviewError('');
+  };
+
+  // ─── Confirmar início a partir do preview ────────────────────────────
+
+  const confirmStart = async () => {
+    if (!previewItem) return;
+    setStartingId(previewItem.id);
+    try {
+      await startAttendance(previewItem.id, doctorId);
+      closePreview();
       await loadData();
     } catch (err) {
-      setError(err.message);
+      setPreviewError(err.message);
     } finally {
       setStartingId(null);
     }
   };
 
-  // ─── Open finish modal ──────────────────────────────────────────────
+  // ─── Abrir modal de finalização ──────────────────────────────────────
 
-  const openFinish = (item) => {
+  const openFinish = async (item) => {
     setFinishItem(item);
     setFinishForm({ ...BLANK_FINISH, dataAtendimento: nowIso() });
     setModalError('');
+    setFinishScreening(null);
+    setShowTriagemInFinish(false);
+    // Busca os detalhes da triagem para o médico consultar durante a finalização
+    try {
+      const s = await getScreeningById(item.id);
+      setFinishScreening(s);
+    } catch { /* silencia — triagem é opcional no modal de finalização */ }
   };
 
-  const closeFinish = () => { setFinishItem(null); setModalError(''); };
+  const closeFinish = () => {
+    setFinishItem(null);
+    setFinishScreening(null);
+    setShowTriagemInFinish(false);
+    setModalError('');
+  };
 
-  // ─── Submit finish ──────────────────────────────────────────────────
+  // ─── Finalizar atendimento ───────────────────────────────────────────
 
   const handleFinish = async (e) => {
     e.preventDefault();
@@ -163,18 +215,15 @@ const AtendimentosTab = ({ doctorId }) => {
     setBusy(true);
     setModalError('');
     try {
-      // 1. Finalizar triagem
       await finishAttendance(finishItem.id, {
         professionalId: doctorId,
         dischargeNotes: finishForm.dischargeNotes || null,
       });
 
-      // 2. Registrar atendimento no prontuário (opcional)
       if (finishForm.addAppointment) {
         let record = await getMedicalRecordByPatient(finishItem.patientId);
         if (!record) record = await createMedicalRecord(finishItem.patientId);
 
-        // datetime-local dá "YYYY-MM-DDTHH:mm" — adiciona segundos para o backend
         const dt = finishForm.dataAtendimento.length === 16
           ? `${finishForm.dataAtendimento}:00`
           : finishForm.dataAtendimento;
@@ -198,8 +247,8 @@ const AtendimentosTab = ({ doctorId }) => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  const waiting     = queue.filter((i) => i.status === 'AGUARDANDO_ATENDIMENTO').length;
-  const inProgress  = queue.filter((i) => i.status === 'EM_ATENDIMENTO').length;
+  const waiting    = queue.filter((i) => i.status === 'AGUARDANDO_ATENDIMENTO').length;
+  const inProgress = queue.filter((i) => i.status === 'EM_ATENDIMENTO').length;
 
   if (loading) return <div className="state-box"><span className="spinner--page" /></div>;
 
@@ -288,9 +337,7 @@ const AtendimentosTab = ({ doctorId }) => {
                     <td><PriorityBadge priority={item.priority} /></td>
 
                     {/* Sector */}
-                    <td className="td-muted">
-                      {SECTOR_LABELS[item.sector] || item.sector || '—'}
-                    </td>
+                    <td className="td-muted">{SECTOR_LABELS[item.sector] || item.sector || '—'}</td>
 
                     {/* Elapsed */}
                     <td className="td-muted">{fmtMinutes(item.elapsedMinutes)}</td>
@@ -319,22 +366,37 @@ const AtendimentosTab = ({ doctorId }) => {
                     <td>
                       <div className="action-group">
                         {isWaiting && (
-                          <button
-                            className="btn-sm btn-outline"
-                            onClick={() => handleStart(item)}
-                            disabled={isStarting}
-                          >
-                            {isStarting ? 'Iniciando...' : 'Iniciar atendimento'}
-                          </button>
+                          <>
+                            {/* Ver triagem antes de iniciar */}
+                            <button
+                              className="btn-sm btn-outline"
+                              onClick={() => openPreview(item, false)}
+                              disabled={isStarting}
+                              title="Ver detalhes da triagem e iniciar atendimento"
+                            >
+                              {isStarting ? 'Iniciando...' : 'Ver triagem'}
+                            </button>
+                          </>
                         )}
                         {isInProgress && (
-                          <button
-                            className="btn-sm btn-outline"
-                            onClick={() => openFinish(item)}
-                            style={{ background: 'var(--primary)', color: '#fff', borderColor: 'var(--primary)' }}
-                          >
-                            Finalizar
-                          </button>
+                          <>
+                            {/* Ver detalhes da triagem (leitura) */}
+                            <button
+                              className="btn-sm btn-outline"
+                              onClick={() => openPreview(item, true)}
+                              title="Consultar dados da triagem"
+                            >
+                              Triagem
+                            </button>
+                            {/* Finalizar */}
+                            <button
+                              className="btn-sm btn-outline"
+                              onClick={() => openFinish(item)}
+                              style={{ background: 'var(--primary)', color: '#fff', borderColor: 'var(--primary)' }}
+                            >
+                              Finalizar
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -346,7 +408,7 @@ const AtendimentosTab = ({ doctorId }) => {
         </div>
       )}
 
-      {/* ── Priority distribution (if stats available) ─────────────── */}
+      {/* ── Priority distribution ───────────────────────────────── */}
       {stats?.porPrioridade && Object.keys(stats.porPrioridade).length > 0 && (
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -367,28 +429,84 @@ const AtendimentosTab = ({ doctorId }) => {
         </div>
       )}
 
-      {/* ── Finish attendance modal ─────────────────────────────────── */}
+      {/* ── Triagem preview / iniciar modal ────────────────────────────── */}
+      <Modal
+        isOpen={!!previewItem}
+        onClose={closePreview}
+        title={`Triagem — ${previewItem?.patientName}`}
+        maxWidth="600px"
+      >
+        {previewLoading ? (
+          <div className="state-box"><span className="spinner--page" /></div>
+        ) : previewError ? (
+          <AlertMessage message={previewError} type="error" />
+        ) : (
+          <>
+            <ScreeningDetail screening={previewScreening} />
+            <div className="modal-footer">
+              <button className="btn-sm btn-outline" onClick={closePreview}>
+                Fechar
+              </button>
+              {/* Só mostra "Iniciar" se não for somente leitura */}
+              {!previewReadOnly && (
+                <button
+                  className="btn-sm btn-outline"
+                  onClick={confirmStart}
+                  disabled={!!startingId}
+                  style={{ background: 'var(--primary)', color: '#fff', borderColor: 'var(--primary)' }}
+                >
+                  {startingId ? 'Iniciando...' : 'Iniciar atendimento'}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* ── Finalizar atendimento modal ────────────────────────────────── */}
       <Modal
         isOpen={!!finishItem}
         onClose={closeFinish}
         title={`Finalizar atendimento — ${finishItem?.patientName}`}
-        maxWidth="520px"
+        maxWidth="560px"
       >
         <form onSubmit={handleFinish}>
           <AlertMessage message={modalError} type="error" />
 
-          {/* Priority reminder */}
+          {/* Resumo rápido */}
           {finishItem?.priority && (
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Prioridade:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <PriorityBadge priority={finishItem.priority} />
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 4 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 Espera: {fmtMinutes(finishItem.elapsedMinutes)}
               </span>
             </div>
           )}
 
-          {/* Discharge notes */}
+          {/* Collapsible: ver dados da triagem durante a finalização */}
+          {finishScreening && (
+            <div style={{ marginBottom: 16 }}>
+              <button
+                type="button"
+                className="btn-sm btn-outline"
+                onClick={() => setShowTriagemInFinish((v) => !v)}
+                style={{ width: '100%', justifyContent: 'space-between', display: 'flex' }}
+              >
+                <span>Consultar dados da triagem</span>
+                <span>{showTriagemInFinish ? '▲' : '▼'}</span>
+              </button>
+              {showTriagemInFinish && (
+                <div style={{
+                  border: '1px solid var(--border)', borderTop: 'none',
+                  borderRadius: '0 0 8px 8px', padding: '16px', background: '#fafafa',
+                }}>
+                  <ScreeningDetail screening={finishScreening} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notas de alta */}
           <div className="field">
             <label>Notas de alta</label>
             <textarea
@@ -401,11 +519,8 @@ const AtendimentosTab = ({ doctorId }) => {
             />
           </div>
 
-          {/* Optional appointment section */}
-          <div style={{
-            border: '1px solid var(--border)', borderRadius: 8,
-            padding: '14px 16px', marginBottom: 4,
-          }}>
+          {/* Registrar no prontuário */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
               <input
                 type="checkbox"
